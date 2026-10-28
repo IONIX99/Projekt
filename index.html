@@ -1,1 +1,2736 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DCS Military Radio & Phraseology Trainer</title>
+  <style>
+    :root {
+      --bg-main: #0a0e14;
+      --bg-panel: #111722;
+      --bg-input: #070a0f;
+      --border-dim: #1e293b;
+      --border-hud: rgba(0, 230, 118, 0.45);
+      --hud-green: #00e676;
+      --hud-cyan: #00e5ff;
+      --hud-amber: #ffb300;
+      --hud-red: #ff5252;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    }
 
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* TOPBAR & UFC */
+    .topbar {
+      background: #06090e;
+      border-bottom: 1px solid var(--border-dim);
+      padding: 0.75rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .brand-title {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--hud-green);
+      letter-spacing: 0.05em;
+      font-size: 1rem;
+    }
+
+    .topbar-telemetry {
+      display: flex;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+    }
+
+    .telemetry-item span {
+      color: var(--text-muted);
+      margin-right: 0.35rem;
+    }
+
+    .telemetry-item strong {
+      color: var(--hud-cyan);
+    }
+
+    /* UFC STRIP */
+    .ufc-bar {
+      background: #0d131d;
+      border-bottom: 1px solid var(--border-dim);
+      padding: 0.6rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+
+    .ufc-display {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: #05080c;
+      border: 1px solid var(--border-hud);
+      padding: 0.35rem 0.75rem;
+      border-radius: 4px;
+    }
+
+    /* NAVIGATION */
+    .nav-bar {
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border-dim);
+      padding: 0.5rem 1.25rem;
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .nav-btn {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid transparent;
+      padding: 0.5rem 0.9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.15s ease;
+    }
+
+    .nav-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .nav-btn.active {
+      color: var(--hud-green);
+      background: rgba(0, 230, 118, 0.08);
+      border-color: var(--border-hud);
+    }
+
+    .nav-badge {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      color: var(--hud-cyan);
+    }
+
+    /* MAIN LAYOUT & VIEWS */
+    .main-container {
+      max-width: 1380px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 1.25rem;
+      flex: 1;
+    }
+
+    .view-section {
+      display: none;
+    }
+
+    .view-section.active {
+      display: block;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-dim);
+      border-radius: 8px;
+      padding: 1.15rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 0.85rem;
+      padding-bottom: 0.65rem;
+      border-bottom: 1px solid var(--border-dim);
+    }
+
+    .stat-value {
+      font-family: var(--font-mono);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--hud-green);
+      margin: 0.25rem 0;
+    }
+
+    .stat-sub {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* TAGS & BUTTONS */
+    .tag {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .tag-example {
+      background: rgba(0, 230, 118, 0.15);
+      color: var(--hud-green);
+      border: 1px solid rgba(0, 230, 118, 0.4);
+    }
+
+    .tag-dcs {
+      background: rgba(255, 179, 0, 0.15);
+      color: var(--hud-amber);
+      border: 1px solid rgba(255, 179, 0, 0.4);
+    }
+
+    .tag-standard {
+      background: rgba(0, 229, 255, 0.12);
+      color: var(--hud-cyan);
+      border: 1px solid rgba(0, 229, 255, 0.35);
+    }
+
+    .tag-critical {
+      background: rgba(255, 82, 82, 0.18);
+      color: var(--hud-red);
+      border: 1px solid rgba(255, 82, 82, 0.45);
+    }
+
+    .btn {
+      background: #1e293b;
+      color: var(--text-main);
+      border: 1px solid #334155;
+      padding: 0.55rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.15s ease;
+    }
+
+    .btn:hover {
+      background: #334155;
+    }
+
+    .btn-primary {
+      background: rgba(0, 230, 118, 0.15);
+      color: var(--hud-green);
+      border-color: var(--hud-green);
+    }
+
+    .btn-primary:hover {
+      background: rgba(0, 230, 118, 0.25);
+    }
+
+    input[type="text"],
+    select {
+      background: var(--bg-input);
+      color: var(--text-main);
+      border: 1px solid var(--border-dim);
+      padding: 0.55rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.88rem;
+    }
+
+    input[type="text"]:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--hud-green);
+    }
+
+    /* PROGRESS BARS */
+    .progress-wrap {
+      margin-bottom: 0.65rem;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .progress-track {
+      height: 8px;
+      background: var(--bg-input);
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid var(--border-dim);
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--hud-green), var(--hud-cyan));
+      transition: width 0.3s ease;
+    }
+
+    /* SELECT CARDS */
+    .select-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .select-card {
+      background: var(--bg-input);
+      border: 1px solid var(--border-dim);
+      border-radius: 6px;
+      padding: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      margin-bottom: 0.5rem;
+    }
+
+    .select-card:hover {
+      border-color: var(--hud-cyan);
+    }
+
+    .select-card.selected {
+      border-color: var(--hud-green);
+      background: rgba(0, 230, 118, 0.06);
+    }
+
+    /* LESSONS LAYOUT */
+    .lessons-layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 900px) {
+      .lessons-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .lesson-step-btn {
+      width: 100%;
+      text-align: left;
+      background: var(--bg-input);
+      color: var(--text-main);
+      border: 1px solid var(--border-dim);
+      padding: 0.65rem 0.8rem;
+      border-radius: 6px;
+      margin-bottom: 0.45rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .lesson-step-btn.active {
+      border-color: var(--hud-green);
+      background: rgba(0, 230, 118, 0.08);
+    }
+
+    .lesson-step-btn.done {
+      border-left: 3px solid var(--hud-green);
+    }
+
+    .anatomy-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.65rem;
+      margin: 0.5rem 0 1rem;
+    }
+
+    .anatomy-part {
+      background: var(--bg-input);
+      border: 1px solid var(--border-dim);
+      padding: 0.65rem;
+      border-radius: 6px;
+    }
+
+    .anatomy-step {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+    }
+
+    .anatomy-phrase {
+      font-family: var(--font-mono);
+      color: var(--hud-amber);
+      font-weight: 700;
+      margin: 0.2rem 0;
+      font-size: 0.88rem;
+    }
+
+    .anatomy-desc {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    /* TERMINAL & FEEDBACK */
+    .terminal-box {
+      background: #05080c;
+      border: 1px solid var(--border-dim);
+      border-radius: 6px;
+      padding: 0.85rem;
+      height: 290px;
+      overflow-y: auto;
+      font-family: var(--font-mono);
+      font-size: 0.84rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .msg-row {
+      padding: 0.55rem 0.75rem;
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+      border-left: 3px solid var(--border-dim);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .msg-system {
+      border-left-color: var(--hud-amber);
+      color: var(--hud-amber);
+    }
+
+    .msg-pilot {
+      border-left-color: var(--hud-cyan);
+      color: var(--hud-cyan);
+    }
+
+    .msg-station {
+      border-left-color: var(--hud-green);
+      color: var(--hud-green);
+    }
+
+    .msg-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      opacity: 0.75;
+      margin-bottom: 0.2rem;
+    }
+
+    .token-bar {
+      display: flex;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+      margin: 0.4rem 0 0.75rem;
+    }
+
+    .token-chip {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      background: rgba(0, 229, 255, 0.1);
+      color: var(--hud-cyan);
+      border: 1px solid rgba(0, 229, 255, 0.35);
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .token-chip:hover {
+      background: rgba(0, 229, 255, 0.2);
+    }
+
+    .feedback-panel {
+      background: var(--bg-input);
+      border: 1px solid var(--border-dim);
+      border-radius: 6px;
+      padding: 0.9rem;
+      margin-top: 0.85rem;
+    }
+
+    .check-list {
+      list-style: none;
+      margin-top: 0.65rem;
+    }
+
+    .check-item {
+      display: flex;
+      gap: 0.5rem;
+      font-size: 0.84rem;
+      padding: 0.3rem 0;
+    }
+
+    .check-item.ok { color: var(--hud-green); }
+    .check-item.minor { color: var(--hud-amber); }
+    .check-item.major { color: #ff9100; }
+    .check-item.critical { color: var(--hud-red); font-weight: 600; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.55rem;
+      border-bottom: 1px solid var(--border-dim);
+    }
+
+    th {
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="brand-title">🎙️ DCS MILITARY RADIO & PHRASEOLOGY TRAINER</div>
+    <div class="topbar-telemetry">
+      <div class="telemetry-item"><span>AIRCRAFT:</span><strong id="top-aircraft">F-16C // VIPER 1-1</strong></div>
+      <div class="telemetry-item"><span>STATION:</span><strong id="top-station">ATC // KOBULETI</strong></div>
+      <div class="telemetry-item"><span>FREQ:</span><strong id="top-freq">262.000 MHz</strong></div>
+      <div class="telemetry-item"><span>PROGRESS:</span><strong id="top-xp">0 XP</strong></div>
+    </div>
+  </header>
+
+  <!-- UFC COCKPIT BAR -->
+  <section class="ufc-bar">
+    <div class="ufc-display">
+      <span id="ufc-radio-name" style="color:var(--hud-amber);">AN/ARC-164 UHF</span>
+      <span id="ufc-band-status">BAND OK</span>
+      <strong id="ufc-freq-readout" style="color:var(--hud-green); font-size:0.95rem;">262.000 AM</strong>
+    </div>
+    <div id="ufc-cockpit-hint" style="color:var(--text-muted); font-size:0.78rem;"></div>
+  </section>
+
+  <!-- NAVIGATION -->
+  <nav class="nav-bar">
+    <button class="nav-btn active" data-view="dashboard" onclick="AppUI.switchView('dashboard')">
+      📊 Dashboard <span class="nav-badge" id="nav-badge-progress">0%</span>
+    </button>
+    <button class="nav-btn" data-view="config" onclick="AppUI.switchView('config')">
+      ✈️ Flugzeug & Frequenz <span class="nav-badge" id="nav-badge-ac">F-16C</span>
+    </button>
+    <button class="nav-btn" data-view="lessons" onclick="AppUI.switchView('lessons')">
+      📚 10-Stufen-Lehrgang <span class="nav-badge" id="nav-badge-lessons">0/10</span>
+    </button>
+    <button class="nav-btn" data-view="trainer" onclick="AppUI.switchView('trainer')">
+      🎧 Funk-Simulator (PTT)
+    </button>
+    <button class="nav-btn" data-view="analytics" onclick="AppUI.switchView('analytics')">
+      📈 Analyse & QA-Tests <span class="nav-badge" id="nav-badge-history">0</span>
+    </button>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-container">
+
+    <!-- VIEW 1: DASHBOARD -->
+    <section id="view-dashboard" class="view-section active">
+      <div class="grid-4">
+        <div class="card">
+          <div class="stat-sub">Lehrgangs-Fortschritt</div>
+          <div class="stat-value" id="dash-lessons-done">0 / 10</div>
+          <div class="stat-sub" id="dash-current-stage">Aktuelle Stufe: 1</div>
+        </div>
+        <div class="card">
+          <div class="stat-sub">Erfahrung & Präzision</div>
+          <div class="stat-value" id="dash-total-xp">0 XP</div>
+          <div class="stat-sub" id="dash-avg-score">Durchschnitt: – %</div>
+        </div>
+        <div class="card">
+          <div class="stat-sub">Funk-Übertragungen</div>
+          <div class="stat-value" id="dash-total-attempts">0</div>
+          <div class="stat-sub" id="dash-storage-status">Speicher wird geprüft...</div>
+        </div>
+        <div class="card">
+          <div class="stat-sub">Häufigster Fehlerfokus</div>
+          <div class="stat-value" id="dash-top-weakness" style="font-size:0.95rem; color:var(--hud-amber);">–</div>
+          <div style="margin-top:0.5rem;">
+            <button class="btn btn-primary" onclick="AppUI.startWeaknessDrill()">Gezielt trainieren</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <h3>Themen-Fortschritt</h3>
+            <button class="btn btn-primary" onclick="AppUI.resumeLastLesson()">Lehrgang fortsetzen →</button>
+          </div>
+          <div id="dash-topic-bars"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Aktives Cockpit- & Missionsprofil</h3>
+            <button class="btn" onclick="AppUI.switchView('config')">Profil ändern</button>
+          </div>
+          <div id="dash-active-profile" style="display:flex; flex-direction:column; gap:0.55rem; font-size:0.88rem;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: CONFIG -->
+    <section id="view-config" class="view-section">
+      <div class="card">
+        <div class="card-header">
+          <h3>1. Flugzeugmuster & Callsign wählen</h3>
+          <label style="font-size:0.82rem; display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
+            <input type="checkbox" id="setting-audio-fx" onchange="AppUI.toggleAudioSetting(this.checked)" />
+            Cockpit-Audio & Sprachausgabe (TTS) aktivieren
+          </label>
+        </div>
+        <div id="aircraft-selector-grid" class="select-grid"></div>
+
+        <div style="margin-top:1rem; display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+          <label style="font-size:0.85rem; font-weight:600;">Eigenes Callsign:</label>
+          <input type="text" id="custom-callsign-input" onchange="AppUI.updateCustomCallsign(this.value)" />
+          <button class="btn btn-primary" onclick="AppUI.updateCustomCallsign(document.getElementById('custom-callsign-input').value)">Übernehmen</button>
+        </div>
+
+        <div id="aircraft-radio-details" style="margin-top:1rem; padding:0.85rem; background:var(--bg-input); border:1px solid var(--border-dim); border-radius:6px; font-size:0.84rem;"></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><h3>2. Funkstelle (Station) wählen</h3></div>
+          <div id="station-selector-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>3. Flugplatz (Airfield / ATC) wählen</h3></div>
+          <div id="airfield-selector-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: LESSONS -->
+    <section id="view-lessons" class="view-section">
+      <div class="lessons-layout">
+        <div class="card">
+          <h3 style="margin-bottom:0.75rem;">Lektionen (1–10)</h3>
+          <div id="lesson-sidebar-list"></div>
+        </div>
+        <div class="card" id="lesson-content-panel"></div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: TRAINER -->
+    <section id="view-trainer" class="view-section">
+      <div class="card">
+        <div class="card-header">
+          <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+            <label style="font-size:0.85rem; font-weight:600;">Szenario:</label>
+            <select id="trainer-scenario-select" onchange="AppUI.selectScenario(this.value)"></select>
+            <select id="trainer-difficulty" onchange="AppUI.changeDifficulty(this.value)">
+              <option value="beginner">Hilfe: Anfänger (4-W-Chips)</option>
+              <option value="advanced">Hilfe: Fortgeschritten</option>
+              <option value="realistic">Hilfe: Realistisch (Keine Hilfe)</option>
+            </select>
+          </div>
+          <div style="display:flex; gap:0.5rem; align-items:center;">
+            <span class="tag tag-standard" id="trainer-step-indicator">Schritt 1 / 3</span>
+            <button class="btn" onclick="AppUI.restartCurrentScenario()">↺ Neu starten</button>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-bottom:0.85rem;">
+          <div style="background:var(--bg-input); padding:0.75rem; border-radius:6px; border:1px solid var(--border-dim); font-size:0.85rem;">
+            <strong style="color:var(--hud-amber);">Missions-Briefing:</strong>
+            <div id="trainer-scenario-briefing" style="margin-top:0.25rem;"></div>
+          </div>
+          <div id="trainer-telemetry-box" style="background:var(--bg-input); padding:0.75rem; border-radius:6px; border:1px solid var(--border-dim); font-family:var(--font-mono); font-size:0.8rem;"></div>
+        </div>
+
+        <div id="trainer-terminal" class="terminal-box"></div>
+        <div id="trainer-assist-box"></div>
+
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.5rem;">
+          <input type="text" id="trainer-user-input" placeholder="Funkspruch hier eingeben..." onkeydown="if(event.key==='Enter') AppUI.submitTrainerTransmission()" style="flex:1; min-width:240px; font-family:var(--font-mono);" />
+          <button class="btn btn-primary" onclick="AppUI.submitTrainerTransmission()">🎙️ PTT Senden</button>
+          <button class="btn" onclick="AppUI.toggleTrainerModelSolution()">💡 Musterlösung</button>
+        </div>
+
+        <div id="trainer-model-box" style="display:none; margin-top:0.65rem; padding:0.6rem; background:rgba(0,229,255,0.08); border:1px solid var(--hud-cyan); border-radius:6px; font-family:var(--font-mono); font-size:0.84rem; color:var(--hud-cyan);"></div>
+        <div id="trainer-feedback-container"></div>
+      </div>
+    </section>
+
+    <!-- VIEW 5: ANALYTICS & QA -->
+    <section id="view-analytics" class="view-section">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <h3>Fehlerkategorien-Analyse</h3>
+            <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+              <button class="btn" onclick="AppUI.exportProgressJSON()">💾 Backup Export</button>
+              <label class="btn" style="cursor:pointer;">
+                📂 Import <input type="file" accept=".json" style="display:none;" onchange="AppUI.importProgressJSON(event)" />
+              </label>
+              <button class="btn" style="color:var(--hud-red);" onclick="AppUI.resetAllProgress()">🗑️ Reset</button>
+            </div>
+          </div>
+          <div id="analytics-error-list"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Automated QA Self-Test Suite (10 Systemtests)</h3>
+            <button class="btn btn-primary" onclick="SelfTestSuite.runAllTests()">▶️ Alle 10 Tests starten</button>
+          </div>
+          <div id="qa-test-results" style="font-family:var(--font-mono); font-size:0.8rem; background:var(--bg-input); padding:0.85rem; border-radius:6px; border:1px solid var(--border-dim);">
+            Klicke auf "Alle 10 Tests starten", um die Evaluations- und Persistenz-Engine zu prüfen.
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>Funkspruch-Historie</h3>
+          <span class="tag tag-standard" id="history-count-tag">0 Einträge</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Zeit</th>
+                <th>Modus</th>
+                <th>Kontext</th>
+                <th>Funkspruch</th>
+                <th>Score</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="analytics-history-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+    <script>
+    /**
+     * ============================================================================
+     * LAYER 1: DOMAIN DATA (AIRCRAFT, AIRFIELDS, STATIONS, LESSONS, SCENARIOS)
+     * ============================================================================
+     */
+    const DomainData = {
+      aircraft: [
+        {
+          id: "f16c",
+          name: "F-16C Viper",
+          shortCode: "F-16C",
+          defaultCallsign: "Viper 1-1",
+          moduleRole: "Multirole Fighter (USAF / NATO)",
+          radios: [
+            { id: "COM1", model: "AN/ARC-164 UHF", bands: ["UHF"], range: "225.000 – 399.975 MHz AM", control: "ICP Button [COM1] → Frequenz über ICP-Tastenfeld eingeben → [ENTR]. HOTAS Transmit Switch: Aft (UHF)." },
+            { id: "COM2", model: "AN/ARC-222 VHF", bands: ["VHF_AM", "VHF_FM"], range: "108.000 – 151.975 MHz AM & 30.000 – 87.975 MHz FM", control: "ICP Button [COM2] → Frequenz im DED eingeben → [ENTR]. HOTAS Transmit Switch: Forward (VHF)." }
+          ],
+          approachSpeedHint: "11 deg AoA (~145–155 kts)",
+          source: "DCS: F-16C Viper Flight Manual (Eagle Dynamics)"
+        },
+        {
+          id: "fa18c",
+          name: "F/A-18C Hornet",
+          shortCode: "F/A-18C",
+          defaultCallsign: "Hornet 1-1",
+          moduleRole: "Carrier / Multirole Strike Fighter (USN / USMC)",
+          radios: [
+            { id: "COMM1", model: "AN/ARC-210(V) V/UHF #1", bands: ["UHF", "VHF_AM", "VHF_FM"], range: "30 – 88 MHz, 108 – 174 MHz, 225 – 400 MHz (AM/FM)", control: "UFC Drehknopf [COMM 1] ziehen/wählen → Kanal oder Manuell (M) über UFC-Tastenfeld → [ENT]. Throttle COMM Switch: COMM 1." },
+            { id: "COMM2", model: "AN/ARC-210(V) V/UHF #2", bands: ["UHF", "VHF_AM", "VHF_FM"], range: "30 – 88 MHz, 108 – 174 MHz, 225 – 400 MHz (AM/FM)", control: "UFC Drehknopf [COMM 2] ziehen → Frequenz auf UFC eingeben → [ENT]. Throttle COMM Switch: COMM 2." }
+          ],
+          approachSpeedHint: "On-Speed AoA 8.1 deg (~134–142 kts)",
+          source: "DCS: F/A-18C Hornet Flight Manual (Eagle Dynamics)"
+        },
+        {
+          id: "f14b",
+          name: "F-14 Tomcat",
+          shortCode: "F-14B",
+          defaultCallsign: "Victory 1-1",
+          moduleRole: "Fleet Defense Interceptor (Two-Seater Pilot + RIO)",
+          radios: [
+            { id: "UHF1", model: "AN/ARC-159 UHF (Pilot)", bands: ["UHF"], range: "225.000 – 399.975 MHz AM", control: "Linke Konsole (Pilot) AN/ARC-159 Panel oder via Jester-Menü. Nur UHF-Band! Throttle MIC Switch: UHF 1." },
+            { id: "VUHF2", model: "AN/ARC-182 V/UHF (RIO)", bands: ["UHF", "VHF_AM", "VHF_FM"], range: "30 – 88 MHz, 108 – 174 MHz, 225 – 400 MHz", control: "Im RIO-Cockpit (oder via Jester AI Radio Menu) einstellbar. Deckt auch VHF-Flugplätze ab. MIC Switch: UHF 2." }
+          ],
+          approachSpeedHint: "15 Units AoA (~128–138 kts)",
+          source: "DCS: F-14 Tomcat Manual (Heatblur Simulations)"
+        },
+        {
+          id: "a10c2",
+          name: "A-10C II Tank Killer",
+          shortCode: "A-10C II",
+          defaultCallsign: "Hawg 1-1",
+          moduleRole: "Close Air Support (CAS) Attack Aircraft",
+          radios: [
+            { id: "RADIO1", model: "AN/ARC-210 V/UHF (VHF/UHF AM)", bands: ["UHF", "VHF_AM", "VHF_FM"], range: "30.000 – 399.975 MHz (AM/FM Multiband)", control: "Linke vordere Konsole ARC-210 Panel → Mode TR → Frequenz wählen. Throttle Mic Switch: Forward (ARC-210)." },
+            { id: "RADIO2", model: "AN/ARC-164 UHF", bands: ["UHF"], range: "225.000 – 399.975 MHz AM", control: "Linke Konsole UHF-Panel → Mode MAIN → Frequenz-Drehschalter. Throttle Mic Switch: Down (UHF)." },
+            { id: "RADIO3", model: "AN/ARC-186 VHF FM", bands: ["VHF_FM"], range: "30.000 – 76.000 MHz FM", control: "Linke Konsole VHF-FM Panel (für JTAC/Bodentruppen). Throttle Mic Switch: Aft (VHF FM)." }
+          ],
+          approachSpeedHint: "20 Units AoA (~120–130 kts)",
+          source: "DCS: A-10C II Tank Killer Flight Manual (Eagle Dynamics)"
+        },
+        {
+          id: "av8b",
+          name: "AV-8B Harrier N/A",
+          shortCode: "AV-8B",
+          defaultCallsign: "Uzi 1-1",
+          moduleRole: "V/STOL Night Attack Aircraft (USMC)",
+          radios: [
+            { id: "COMM1", model: "AN/ARC-210 V/UHF #1", bands: ["UHF", "VHF_AM", "VHF_FM"], range: "30 – 400 MHz Multiband (AM/FM)", control: "UFC COMM 1 Knopf → Frequenz im UFC eingeben → [ENT]. HOTAS Comm Switch: Forward." },
+            { id: "COMM2", model: "AN/ARC-210 V/UHF #2", bands: ["UHF", "VHF_AM", "VHF_FM"], range: "30 – 400 MHz Multiband (AM/FM)", control: "UFC COMM 2 Knopf → Frequenz im UFC eingeben → [ENT]. HOTAS Comm Switch: Aft." }
+          ],
+          approachSpeedHint: "10–11 deg AoA / VSTOL Nozzle Hover",
+          source: "DCS: AV-8B Night Attack V/STOL Manual"
+        },
+        {
+          id: "m2000c",
+          name: "Mirage 2000C",
+          shortCode: "M-2000C",
+          defaultCallsign: "Springfield 1-1",
+          moduleRole: "Interceptor / Air Superiority Fighter (Armée de l'Air)",
+          radios: [
+            { id: "GREEN", model: "TRT ERA 7000 V/UHF (Poste Vert)", bands: ["UHF", "VHF_AM"], range: "118.000 – 143.975 MHz VHF & 225.000 – 399.975 MHz UHF", control: "Linke Konsole V/UHF-Panel (Grün) → Mode M → Frequenz-Rädchen einstellen. HOTAS: V/UHF GREEN PTT." },
+            { id: "RED", model: "TRT ERA 7200 UHF (Poste Rouge)", bands: ["UHF"], range: "225.000 – 399.975 MHz UHF (Aux/Tactical)", control: "Linke Konsole UHF-Panel (Rot, nur UHF-Band!). HOTAS: UHF RED PTT." }
+          ],
+          approachSpeedHint: "14 deg AoA (Delta-Flügel Anflug)",
+          source: "DCS: M-2000C Flight Manual"
+        }
+      ],
+
+      stations: [
+        {
+          id: "atc",
+          name: "ATC (Flugplatzkontrolle: Ground / Tower / Approach)",
+          badge: "ATC + Flugplatzwahl",
+          description: "Zuständig für Startup, Rollfreigaben (Taxi), Haltepunkte (Hold Short), Startfreigaben (Takeoff) sowie Anflug und Landung.",
+          requiresAirfield: true
+        },
+        {
+          id: "awacs",
+          name: "AWACS / GCI (Frühwarnung & Jägerleitung)",
+          badge: "OVERLORD 1-1",
+          description: "Überwacht den Luftraum. Liefert Lagebilder (Picture), Zielpeilungen zum nächsten Kontakt (Bogey Dope) und Freund-Feind-Identifikation (Declare).",
+          requiresAirfield: false,
+          stationCallsign: "Overlord 1-1",
+          freqUHF: "251.000 MHz",
+          freqVHF: "136.000 MHz",
+          dataNote: "[TRAININGSBEISPIEL / DCS-STANDARD] Typische AWACS-Frequenz in DCS-Missionen: 251.000 MHz UHF AM."
+        },
+        {
+          id: "wingman",
+          name: "Wingman (Direkter Flügelmann -2)",
+          badge: "INTRA-FLIGHT",
+          description: "Direkte Taktik- und Formationskommunikation mit deinem Flügelmann (Check-In, Formation einnehmen, Sensor-/Waffeneinsatz, Raygun/Buddy Spike).",
+          requiresAirfield: false,
+          stationCallsign: "Two",
+          freqUHF: "305.000 MHz",
+          freqVHF: "127.500 MHz",
+          dataNote: "[TRAININGSBEISPIEL] Intra-Flight-Frequenz 305.000 MHz UHF bzw. 127.500 MHz VHF."
+        },
+        {
+          id: "formation",
+          name: "Formation / Flight (Gesamter Schwarm 1-1 bis 1-4)",
+          badge: "FLIGHT NET",
+          description: "Schwarm-Kommunikation für Radio Checks, gemeinsame Frequenzwechsel (Push Kanal/Frequenz), Fence-In-Checks und Positionsmeldungen.",
+          requiresAirfield: false,
+          stationCallsign: "Flight",
+          freqUHF: "305.000 MHz",
+          freqVHF: "127.500 MHz",
+          dataNote: "[TRAININGSBEISPIEL] Taktisches Schwarm-Netz auf 305.000 MHz UHF."
+        }
+      ],
+
+      airfields: [
+        {
+          id: "kobuleti",
+          name: "Kobuleti Airbase (UG5X)",
+          map: "Caucasus (Standard-Karte)",
+          callsignGround: "Kobuleti Ground",
+          callsignTower: "Kobuleti Tower",
+          callsignApproach: "Kobuleti Approach",
+          activeRunway: "07",
+          allRunways: "07 / 25 (7.870 ft / 2.400 m)",
+          freqUHF: "262.000 MHz",
+          freqVHF: "133.000 MHz",
+          freqFM: "40.800 MHz",
+          tacan: "67X (KBL)",
+          ils: "RWY 07: 111.50 MHz (Kurs 064°)",
+          elevation: "59 ft MSL",
+          sampleWeather: { wind: "070 at 8 knots", qnhInHg: "29.92", qnhHpa: "1013", infoLetter: "Alpha", taxiRoute: "Taxiway Alpha" },
+          sourceNote: "[DCS-SPEZIFISCH] Verifizierte DCS-Kaukasus-Daten (UHF 262.00 / VHF 133.00 / TACAN 67X)."
+        },
+        {
+          id: "batumi",
+          name: "Batumi Airport (UGSB)",
+          map: "Caucasus (Standard-Karte)",
+          callsignGround: "Batumi Ground",
+          callsignTower: "Batumi Tower",
+          callsignApproach: "Batumi Approach",
+          activeRunway: "13",
+          allRunways: "13 / 31 (8.050 ft / 2.454 m)",
+          freqUHF: "260.000 MHz",
+          freqVHF: "131.000 MHz",
+          freqFM: "40.400 MHz",
+          tacan: "16X (BTM)",
+          ils: "RWY 13: 110.30 MHz (Kurs 126°)",
+          elevation: "33 ft MSL",
+          sampleWeather: { wind: "130 at 10 knots", qnhInHg: "29.95", qnhHpa: "1014", infoLetter: "Bravo", taxiRoute: "Bravo" },
+          sourceNote: "[DCS-SPEZIFISCH] Verifizierte DCS-Kaukasus-Daten (UHF 260.00 / VHF 131.00 / TACAN 16X)."
+        },
+        {
+          id: "kutaisi",
+          name: "Kutaisi-Kopitnari (UGKO)",
+          map: "Caucasus (Standard-Karte)",
+          callsignGround: "Kutaisi Ground",
+          callsignTower: "Kutaisi Tower",
+          callsignApproach: "Kutaisi Approach",
+          activeRunway: "08",
+          allRunways: "08 / 26 (8.202 ft / 2.500 m)",
+          freqUHF: "263.000 MHz",
+          freqVHF: "134.000 MHz",
+          freqFM: "41.000 MHz",
+          tacan: "44X (KTS)",
+          ils: "RWY 08: 109.75 MHz (Kurs 074°)",
+          elevation: "148 ft MSL",
+          sampleWeather: { wind: "080 at 6 knots", qnhInHg: "29.90", qnhHpa: "1012", infoLetter: "Charlie", taxiRoute: "Main Taxiway" },
+          sourceNote: "[DCS-SPEZIFISCH] Verifizierte DCS-Kaukasus-Daten (UHF 263.00 / VHF 134.00 / TACAN 44X)."
+        },
+        {
+          id: "nellis",
+          name: "Nellis AFB (KLSV)",
+          map: "Nevada Test & Training Range (NTTR)",
+          callsignGround: "Nellis Ground",
+          callsignTower: "Nellis Tower",
+          callsignApproach: "Nellis Approach",
+          activeRunway: "03L",
+          allRunways: "03L/21R (10.120 ft) & 03R/21L (10.051 ft)",
+          freqUHF: "327.000 MHz (TWR) / 275.800 MHz (GND)",
+          freqVHF: "132.550 MHz (TWR) / 121.800 MHz (GND)",
+          freqFM: "N/A (USAF Base)",
+          tacan: "12X (LSV)",
+          ils: "RWY 21L: 109.10 MHz",
+          elevation: "1.869 ft MSL",
+          sampleWeather: { wind: "030 at 12 knots", qnhInHg: "29.88", qnhHpa: "1011", infoLetter: "Delta", taxiRoute: "Foxtrot" },
+          sourceNote: "[STANDARD-PHRASEOLOGIE & DCS] Reale FAA/USAF-Frequenzen (Ground 275.8, Tower 327.0)."
+        }
+      ],
+
+      interpolate(text, ctx) {
+        if (!text) return "";
+        return text
+          .replace(/\{callsign\}/g, ctx.callsign)
+          .replace(/\{flightName\}/g, ctx.flightName)
+          .replace(/\{wingmanCallsign\}/g, ctx.wingmanCallsign)
+          .replace(/\{aircraftName\}/g, ctx.aircraft.name)
+          .replace(/\{airfieldName\}/g, ctx.airfield.name)
+          .replace(/\{towerCall\}/g, ctx.airfield.callsignTower)
+          .replace(/\{groundCall\}/g, ctx.airfield.callsignGround)
+          .replace(/\{approachCall\}/g, ctx.airfield.callsignApproach)
+          .replace(/\{rwy\}/g, ctx.airfield.activeRunway)
+          .replace(/\{freqUHF\}/g, ctx.airfield.freqUHF)
+          .replace(/\{freqVHF\}/g, ctx.airfield.freqVHF)
+          .replace(/\{qnh\}/g, ctx.airfield.sampleWeather.qnhInHg)
+          .replace(/\{wind\}/g, ctx.airfield.sampleWeather.wind)
+          .replace(/\{info\}/g, ctx.airfield.sampleWeather.infoLetter)
+          .replace(/\{taxiRoute\}/g, ctx.airfield.sampleWeather.taxiRoute);
+      },
+
+      lessons: [
+        {
+          id: 1,
+          topic: "Grundlagen",
+          title: "Stufe 1: Grundlagen des Flugfunks & Zahlen-Disziplin",
+          goal: "Du verstehst das Halbduplex-Prinzip (Push-to-Talk), die 4-W-Reihenfolge und führst einen ersten Radio Check durch.",
+          ruleBadge: "STANDARD-PHRASEOLOGIE",
+          sourceRef: "ICAO Doc 9432 Kap. 2 & NATO ACP 125",
+          theory: "Flugfunk arbeitet im Halbduplex-Verfahren: Solange jemand die Sendetaste (PTT) drückt, ist die Frequenz für alle anderen blockiert. Es gilt immer die Reihenfolge: 1. WEN rufe ich? (Empfänger) → 2. WER bin ich? (Eigenes Callsign) → 3. WO bin ich? → 4. WAS will ich? Zahlen werden einzeln ausgesprochen (Runway 07 = 'Zero Seven', 9 = 'Niner').",
+          scenarioDesc: "Du sitzt im Cockpit deiner {aircraftName} auf dem Vorfeld von {airfieldName}. Dein Funkgerät ist auf {freqUHF} gerastet. Prüfe bei {towerCall}, ob dein Sender klar verständlich ist (Radio Check).",
+          exampleCall: "{towerCall}, {callsign}, radio check.",
+          anatomy: [
+            { step: "1. Wen rufe ich?", phrase: "{towerCall}", desc: "Name der angerufenen Bodenstelle zuerst." },
+            { step: "2. Wer bin ich?", phrase: "{callsign}", desc: "Dein eigenes Rufzeichen an zweiter Stelle." },
+            { step: "3. Wo / Kontext?", phrase: "on {freqUHF} (optional)", desc: "Beim einfachen Radio Check optional." },
+            { step: "4. Was will ich?", phrase: "radio check", desc: "Anfrage zur Empfangsqualität ('Loud and clear' / '5 by 5')." }
+          ],
+          exercisePrompt: "Formuliere jetzt auf Englisch einen Radio Check an {towerCall} mit deinem Rufzeichen {callsign}:",
+          evalRules: {
+            recipient: ["{towerCall}", "{groundCall}"],
+            sender: "{callsign}",
+            requiredKeywords: [
+              { id: "intent_radiocheck", label: "Anfrage 'radio check' oder 'how do you read'", patterns: ["radio check", "how do you read", "comm check", "comms check"], severity: "major", ruleExplain: "Ohne 'radio check' oder 'how do you read' weiß die Bodenstelle nicht, welches Anliegen du hast." }
+            ]
+          },
+          stationReply: "{callsign}, {towerCall}, reading you loud and clear, five by five."
+        },
+        {
+          id: 2,
+          topic: "ATC & Boden",
+          title: "Stufe 2: Triebwerksstart anfordern (Request Startup)",
+          goal: "Du meldest dich mit Standplatz und Wetterinformation (ATIS) bei Ground/Tower und forderst die Anlassfreigabe an.",
+          ruleBadge: "STANDARD & DCS",
+          sourceRef: "ICAO Doc 9432 Kap. 4 & DCS ATC Procedures",
+          theory: "Vor dem Anlassen der Triebwerke holst du dir die Startup-Freigabe. Im Multiplayer (SRS) nennst du deine Parkposition (z. B. Ramp / Shelter) und den aktuellen ATIS-Kennbuchstaben (z. B. Information {info}). In Vanilla-DCS wählst du im F-Menü 'Request Startup'.",
+          scenarioDesc: "Du stehst auf dem Ramp von {airfieldName} mit der aktuellen Wetter-Information {info}. Fordere bei {groundCall} (oder {towerCall}) den Triebwerksstart (Startup) an.",
+          exampleCall: "{groundCall}, {callsign}, on the ramp with information {info}, request startup.",
+          anatomy: [
+            { step: "1. Wen rufe ich?", phrase: "{groundCall}", desc: "Zuständige Bodenfunkstelle." },
+            { step: "2. Wer bin ich?", phrase: "{callsign}", desc: "Eigenes Rufzeichen." },
+            { step: "3. Wo / Kontext?", phrase: "on the ramp, information {info}", desc: "Standort am Boden & ATIS-Bestätigung." },
+            { step: "4. Was will ich?", phrase: "request startup", desc: "Anfrage zum Triebwerksstart." }
+          ],
+          exercisePrompt: "Fordere bei {groundCall} (oder {towerCall}) als {callsign} den Triebwerksstart ('request startup') an:",
+          evalRules: {
+            recipient: ["{groundCall}", "{towerCall}"],
+            sender: "{callsign}",
+            requiredKeywords: [
+              { id: "intent_startup", label: "Anfrage 'request startup' / 'engine start'", patterns: ["startup", "start up", "engine start"], severity: "major", ruleExplain: "Du musst klar sagen, dass du die Triebwerke starten möchtest ('request startup')." }
+            ]
+          },
+          stationReply: "{callsign}, {groundCall}, startup approved, QNH {qnh}, active runway {rwy}, report ready for taxi."
+        },
+        {
+          id: 3,
+          topic: "ATC & Boden",
+          title: "Stufe 3: Rollfreigabe anfordern (Request Taxi)",
+          goal: "Nach dem Hochfahren der Systeme forderst du die Rollfreigabe zur aktiven Startbahn an.",
+          ruleBadge: "STANDARD-PHRASEOLOGIE",
+          sourceRef: "ICAO Doc 9432 Kap. 4.4",
+          theory: "Sobald die INS/EGI-Ausrichtung abgeschlossen ist, forderst du 'Request Taxi' an. Die Bodenkontrolle weist dir daraufhin die aktive Runway ({rwy}), den Rollweg ({taxiRoute}) und den Höhenmesserwert (QNH {qnh}) zu.",
+          scenarioDesc: "Deine {aircraftName} ist abflugbereit. Fordere bei {groundCall} das Rollen (Taxi) zur aktiven Runway {rwy} an.",
+          exampleCall: "{groundCall}, {callsign}, ready to taxi to runway {rwy}.",
+          anatomy: [
+            { step: "1. Wen rufe ich?", phrase: "{groundCall}", desc: "Bodenkontrolle." },
+            { step: "2. Wer bin ich?", phrase: "{callsign}", desc: "Eigenes Rufzeichen." },
+            { step: "3. Wo / Status?", phrase: "ready to taxi", desc: "Abflugbereitschaft nach den Checks." },
+            { step: "4. Was / Wohin?", phrase: "request taxi to runway {rwy}", desc: "Ziel-Runway angeben (optional bei Anfrage, Pflicht beim Readback)." }
+          ],
+          exercisePrompt: "Fordere bei {groundCall} (oder {towerCall}) als {callsign} die Rollfreigabe ('request taxi') an:",
+          evalRules: {
+            recipient: ["{groundCall}", "{towerCall}"],
+            sender: "{callsign}",
+            requiredKeywords: [
+              { id: "intent_taxi", label: "Anfrage 'taxi'", patterns: ["taxi"], severity: "major", ruleExplain: "Das Schlüsselwort 'taxi' ist zwingend erforderlich." }
+            ]
+          },
+          stationReply: "{callsign}, {groundCall}, taxi to holding point runway {rwy} via {taxiRoute}, QNH {qnh}, hold short runway {rwy}."
+        },
+        {
+          id: 4,
+          topic: "ATC & Start",
+          title: "Stufe 4: Pflicht-Readback der Roll- & Halteanweisung (Hold Short)",
+          goal: "Du bestätigst eine sicherheitskritische Roll- und Halteanweisung fehlerfrei inklusive Runway und Hold Short.",
+          ruleBadge: "KRITISCHE SICHERHEITSREGEL",
+          sourceRef: "ICAO Doc 9432 Kap. 2.8 & 4.5 (Mandatory Readback)",
+          theory: "Wenn ATC dir 'Taxi to runway {rwy}, hold short runway {rwy}, QNH {qnh}' gibt, reicht ein bloßes 'Roger' oder 'Copy' NICHT! Aktive Runways und Halteanweisungen ('Hold short') unterliegen der strengen Readback-Pflicht, um Runway Incursions (Zusammenstöße auf der Startbahn) zu verhindern.",
+          scenarioDesc: "{groundCall} hat dir gefunkt: '{callsign}, taxi to runway {rwy} via {taxiRoute}, QNH {qnh}, hold short runway {rwy}.' Gib jetzt das vollständige Readback!",
+          exampleCall: "{groundCall}, {callsign}, taxi to runway {rwy} via {taxiRoute}, QNH {qnh}, hold short runway {rwy}.",
+          anatomy: [
+            { step: "1. Adressat/Absender", phrase: "{groundCall}, {callsign}", desc: "Wer bestätigt wem." },
+            { step: "2. Rollziel", phrase: "taxi to runway {rwy}", desc: "Bestätigung der zugewiesenen Bahn." },
+            { step: "3. Druckwert", phrase: "QNH {qnh}", desc: "Bestätigung der Höhenmessereinstellung." },
+            { step: "4. Haltebefehl!", phrase: "hold short runway {rwy}", desc: "Sicherheitskritische Pflichtbestätigung!" }
+          ],
+          exercisePrompt: "Bestätige die Anweisung inklusive 'hold short' und 'runway {rwy}' (sowie optional QNH {qnh}):",
+          evalRules: {
+            recipient: ["{groundCall}", "{towerCall}"],
+            sender: "{callsign}",
+            requiredKeywords: [
+              { id: "readback_holdshort", label: "Sicherheits-Readback 'hold short'", patterns: ["hold short", "holding short"], severity: "critical", ruleExplain: "KRITISCH: Eine Halteanweisung ('hold short') darf niemals ohne wörtliches Readback bleiben (Runway-Incursion-Gefahr!)." },
+              { id: "readback_rwy", label: "Aktive Runway '{rwy}'", patterns: ["{rwy}"], severity: "critical", ruleExplain: "KRITISCH: Die zugewiesene Runway ({rwy}) muss beim Readback zwingend wiederholt werden." }
+            ]
+          },
+          stationReply: "{callsign}, readback correct, contact {towerCall} on {freqUHF} when holding short."
+        },
+        {
+          id: 5,
+          topic: "ATC & Start",
+          title: "Stufe 5: Abflugbereitschaft am Haltepunkt ('Ready for Departure')",
+          goal: "Du meldest dich am Haltepunkt der Bahn abflugbereit und vermeidest das verbotene Wort 'Takeoff' vor der Freigabe.",
+          ruleBadge: "KRITISCHE ICAO-REGEL",
+          sourceRef: "ICAO Doc 9432 Kap. 4.6 ('Departure' vs. 'Takeoff')",
+          theory: "WICHTIGSTE REGEL AM HALTEPUNKT: Das Wort 'TAKEOFF' ist ausschließlich für die tatsächliche Startfreigabe ('Cleared for takeoff') und deren Readback reserviert! Wenn du am Haltepunkt stehst und abfliegen willst, sagst du IMMER 'ready for departure' – niemals 'ready for takeoff', damit kein Pilot auf der Frequenz ein versehentliches 'takeoff' als Startfreigabe missversteht.",
+          scenarioDesc: "Du stehst am Haltepunkt (Holding Short) der Runway {rwy} in {airfieldName}. Melde dich bei {towerCall} abflugbereit.",
+          exampleCall: "{towerCall}, {callsign}, holding short runway {rwy}, ready for departure.",
+          anatomy: [
+            { step: "1. Wen rufe ich?", phrase: "{towerCall}", desc: "Am Haltepunkt ist der Tower zuständig." },
+            { step: "2. Wer bin ich?", phrase: "{callsign}", desc: "Eigenes Rufzeichen." },
+            { step: "3. Wo bin ich?", phrase: "holding short runway {rwy}", desc: "Position vor dem Rollhalt der Bahn {rwy}." },
+            { step: "4. Was will ich?", phrase: "ready for departure", desc: "Abflugbereitschaft OHNE das Wort 'takeoff'!" }
+          ],
+          exercisePrompt: "Melde dich bei {towerCall} am Haltepunkt der Runway {rwy} abflugbereit (nutze 'departure', NICHT 'takeoff'!):",
+          evalRules: {
+            recipient: ["{towerCall}"],
+            sender: "{callsign}",
+            forbidPrematureTakeoff: true,
+            requiredKeywords: [
+              { id: "pos_holdshort", label: "Position 'holding short' + Runway {rwy}", patterns: ["holding short", "hold short", "runway {rwy}"], severity: "major", ruleExplain: "Nenne dem Tower deine Position am Haltepunkt der Runway {rwy}." },
+              { id: "intent_departure", label: "Abflugbereitschaft 'ready for departure'", patterns: ["departure"], severity: "major", ruleExplain: "Verwende am Haltepunkt standardmäßig 'ready for departure'." }
+            ]
+          },
+          stationReply: "{callsign}, {towerCall}, wind {wind}, runway {rwy}, cleared for takeoff."
+        },
+        {
+          id: 6,
+          topic: "Formation & Wingman",
+          title: "Stufe 6: Schwarm-Check-In & Frequenzwechsel ('Push')",
+          goal: "Nach dem Start sammelst du deinen Flügelmann/Schwarm und kommandierst den Wechsel auf die taktische Frequenz.",
+          ruleBadge: "MILITÄRISCHE BREVITY",
+          sourceRef: "NATO ACP 125 & ATP 1-02.1 (CHECK / PUSH)",
+          theory: "Als Flight Lead ({callsign}) prüfst du mit '{flightName} Flight, check in', ob alle Rotten-/Schwarmmitglieder auf der Frequenz sind (Wingman antwortet knapp 'Two'). Mit 'push [Frequenz/Kanal]' befiehlst du den sofortigen Wechsel auf eine neue Frequenz ohne vorherige Bestätigungsdiskussion.",
+          scenarioDesc: "Du bist mit deinem Wingman ({wingmanCallsign}) nach dem Start in der Luft. Rufe deinen Schwarm ('{flightName} Flight' oder 'Two') zum Check-In und weise ihn an, auf 251.000 MHz (AWACS) zu wechseln ('push 251').",
+          exampleCall: "{flightName} Flight, {callsign}, check in, push 251.0.",
+          anatomy: [
+            { step: "1. Wen rufe ich?", phrase: "{flightName} Flight / Two", desc: "Deinen Schwarm oder Flügelmann." },
+            { step: "2. Wer bin ich?", phrase: "{callsign}", desc: "Du als Flight Lead." },
+            { step: "3. Aktion 1", phrase: "check in", desc: "Präsenzabfrage im Schwarm." },
+            { step: "4. Aktion 2", phrase: "push 251", desc: "Kommando zum Frequenzwechsel auf 251 MHz." }
+          ],
+          exercisePrompt: "Rufe '{flightName} Flight' (oder 'Two') als {callsign} und kommandiere 'check in' oder 'push 251':",
+          evalRules: {
+            recipient: ["{flightName}", "flight", "two", "{wingmanCallsign}"],
+            sender: "{callsign}",
+            requiredKeywords: [
+              { id: "brevity_checkin_push", label: "Kommando 'check in' oder 'push'", patterns: ["check in", "check", "push"], severity: "major", ruleExplain: "Nutze 'check in' für den Status-Check oder 'push [Frequenz]' für den Frequenzwechsel." }
+            ]
+          },
+          stationReply: "{flightName} Two, copy, pushing 251.0."
+        },
+        {
+          id: 7,
+          topic: "AWACS & Taktik",
+          title: "Stufe 7: AWACS Check-In & Luftlagebild ('Request Picture')",
+          goal: "Du meldest deinen Schwarm mit Flughöhe (Angels) bei AWACS an und forderst das taktische Gesamtlagebild (Picture) an.",
+          ruleBadge: "NATO BREVITY",
+          sourceRef: "ATP 1-02.1 Multi-Service Brevity Codes (ANGELS / PICTURE)",
+          theory: "Auf der AWACS-Frequenz (251.000 MHz, Rufzeichen 'Overlord 1-1') meldest du dich mit deiner Höhe in Tausend Fuß ('Angels 20' = 20.000 ft) und fragst nach 'Request Picture'. Ein 'Picture' liefert die taktische Gesamtübersicht aller feindlichen Gruppen relativ zum Bullseye.",
+          scenarioDesc: "Du fliegst mit deiner {aircraftName} auf 20.000 Fuß (Angels 20). Melde dich bei 'Overlord 1-1' und fordere ein 'Picture' an.",
+          exampleCall: "Overlord 1-1, {callsign}, checking in angels 20, request picture.",
+          anatomy: [
+            { step: "1. Wen rufe ich?", phrase: "Overlord 1-1", desc: "Rufzeichen des AWACS-Flugzeugs." },
+            { step: "2. Wer bin ich?", phrase: "{callsign}", desc: "Dein Rufzeichen." },
+            { step: "3. Wo / Höhe?", phrase: "checking in angels 20", desc: "Angels 20 = 20.000 ft MSL." },
+            { step: "4. Was will ich?", phrase: "request picture", desc: "Anfrage des taktischen Gesamtlagebilds." }
+          ],
+          exercisePrompt: "Rufe 'Overlord 1-1' als {callsign}, nenne deine Höhe ('angels 20') und fordere 'request picture' an:",
+          evalRules: {
+            recipient: ["overlord", "overlord 1-1", "awacs"],
+            sender: "{callsign}",
+            requiredKeywords: [
+              { id: "awacs_picture", label: "Brevity 'picture' oder 'checking in'", patterns: ["picture", "check in", "checking in"], severity: "major", ruleExplain: "Fordere mit 'request picture' das Luftlagebild von AWACS an." }
+            ]
+          },
+          stationReply: "{callsign}, Overlord 1-1, radar contact, picture is two groups, first group Bullseye 270 for 35, at 24,000, hot."
+        },
+        {
+          id: 8,
+          topic: "AWACS & Taktik",
+          title: "Stufe 8: Zielpeilung ('Bogey Dope') & Identifikation ('Declare')",
+          goal: "Du forderst im Luftkampf die Peilung zur nächstgelegenen Feindgruppe (Bogey Dope) oder eine Freund-Feind-Abfrage (Declare) an.",
+          ruleBadge: "NATO & DCS AWACS",
+          sourceRef: "ATP 1-02.1 Brevity (BOGEY DOPE / DECLARE / BRAA)",
+          theory: "Während 'Picture' alle Gruppen im Raum beschreibt, fragt 'Bogey Dope' gezielt nach der nächstgelegenen feindlichen Gruppe zu deiner eigenen Position (Antwort im BRAA-Format: Bearing, Range, Altitude, Aspect). Mit 'Declare' lässt du einen aufgeschalteten Radarkontakt durch AWACS als 'Hostile', 'Friendly' oder 'Bogey' identifizieren.",
+          scenarioDesc: "Du befindest dich im Anflug auf einen unbekannten Radarkontakt. Fordere bei 'Overlord 1-1' einen 'Bogey Dope' (oder 'Declare') an.",
+          exampleCall: "Overlord 1-1, {callsign}, request bogey dope.",
+          anatomy: [
+            { step: "1. Wen rufe ich?", phrase: "Overlord 1-1", desc: "AWACS-Rufzeichen." },
+            { step: "2. Wer bin ich?", phrase: "{callsign}", desc: "Eigenes Rufzeichen." },
+            { step: "3. Kontext", phrase: "(Tactical / BRAA)", desc: "Direkte Peilung relativ zu deinem Flugzeug." },
+            { step: "4. Was will ich?", phrase: "request bogey dope / declare", desc: "Zielinfo zur nächsten Gruppe oder IFF-Abfrage." }
+          ],
+          exercisePrompt: "Fordere bei 'Overlord 1-1' als {callsign} einen 'bogey dope' oder 'declare' an:",
+          evalRules: {
+            recipient: ["overlord", "overlord 1-1", "awacs"],
+            sender: "{callsign}",
+            requiredKeywords: [
+              { id: "awacs_bogey_declare", label: "Brevity 'bogey dope' oder 'declare'", patterns: ["bogey dope", "declare"], severity: "major", ruleExplain: "Nutze 'bogey dope' für die nächste Feindgruppe oder 'declare' zur Freund-Feind-Prüfung." }
+            ]
+          },
+          stationReply: "{callsign}, Overlord 1-1, clean — nearest group BRAA 085 for 18, at 22,000, hot, hostile."
+        },
+        {
+          id: 9,
+          topic: "Anflug & Landung",
+          title: "Stufe 9: Rückkehr zum Flugplatz ('Inbound for Landing')",
+          goal: "Nach erfüllter Mission meldest du dich aus ca. 15–25 NM Entfernung mit Position, Höhe und Landeabsicht bei Approach/Tower an.",
+          ruleBadge: "STANDARD & DCS",
+          sourceRef: "ICAO Doc 9432 Kap. 5 & DCS ATC 'Inbound'",
+          theory: "Beim Rückflug rufst du Approach oder Tower etwa 15–25 NM vor dem Platz. Du nennst Entfernung/Richtung (oder Initial Point), Flughöhe und 'inbound for landing' (z. B. Overhead Break oder Straight-In). ATC gibt dir daraufhin die aktive Runway ({rwy}), Wind und QNH ({qnh}).",
+          scenarioDesc: "Du näherst dich {airfieldName} aus 15 NM Entfernung auf 5.000 Fuß. Melde dich bei {approachCall} (oder {towerCall}) 'inbound for landing'.",
+          exampleCall: "{approachCall}, {callsign}, 15 miles out at 5,000 feet, inbound for landing.",
+          anatomy: [
+            { step: "1. Wen rufe ich?", phrase: "{approachCall}", desc: "Anflugkontrolle oder Tower." },
+            { step: "2. Wer bin ich?", phrase: "{callsign}", desc: "Eigenes Rufzeichen." },
+            { step: "3. Wo bin ich?", phrase: "15 miles out at 5,000 feet", desc: "Distanz und Flughöhe." },
+            { step: "4. Was will ich?", phrase: "inbound for landing", desc: "Ankündigung des Landeanflugs." }
+          ],
+          exercisePrompt: "Melde dich bei {approachCall} (oder {towerCall}) als {callsign} 'inbound for landing':",
+          evalRules: {
+            recipient: ["{approachCall}", "{towerCall}"],
+            sender: "{callsign}",
+            requiredKeywords: [
+              { id: "intent_inbound", label: "Anflugmeldung 'inbound' oder 'landing'", patterns: ["inbound", "for landing", "request landing"], severity: "major", ruleExplain: "Melde deine Anflugabsicht mit 'inbound for landing'." }
+            ]
+          },
+          stationReply: "{callsign}, {approachCall}, fly heading 070, expect runway {rwy}, QNH {qnh}, report final with gear down."
+        },
+        {
+          id: 10,
+          topic: "Anflug & Landung",
+          title: "Stufe 10: Endanflug & Fahrwerk-Meldung ('Final, Three Green / Gear Down')",
+          goal: "Im Endanflug (Final) oder Base Turn meldest du das ausgefahrene und verriegelte Fahrwerk ('Three Green' / 'Gear Down') für die Landefreigabe.",
+          ruleBadge: "MILITÄRISCHER STANDARD",
+          sourceRef: "FAA JO 7110.65 Kap. 3-10 & NATO Tower Procedures",
+          theory: "Bei Militärflugzeugen ist der Check 'Gear down, three green' im Endanflug (Final) oder Base Leg zwingender Bestandteil der Landemeldung. Ohne Fahrwerksmeldung weist der militärische Tower dich sofort auf 'Check wheels down' hin, bevor er 'Cleared to land' erteilt.",
+          scenarioDesc: "Du befindest dich mit deiner {aircraftName} im Endanflug (Final) auf Runway {rwy} von {airfieldName}. Dein Fahrwerk ist ausgefahren und verriegelt. Hole dir bei {towerCall} die Landefreigabe.",
+          exampleCall: "{towerCall}, {callsign}, final runway {rwy}, gear down, three green.",
+          anatomy: [
+            { step: "1. Wen rufe ich?", phrase: "{towerCall}", desc: "Tower des Zielflugplatzes." },
+            { step: "2. Wer bin ich?", phrase: "{callsign}", desc: "Eigenes Rufzeichen." },
+            { step: "3. Wo bin ich?", phrase: "final runway {rwy}", desc: "Endanflug auf die aktive Bahn." },
+            { step: "4. Sicherheitscheck", phrase: "gear down, three green", desc: "Pflichtmeldung des verriegelten Fahrwerks." }
+          ],
+          exercisePrompt: "Melde dich bei {towerCall} als {callsign} im Endanflug auf Runway {rwy} mit ausgefahrenem Fahrwerk ('gear down' oder 'three green'):",
+          evalRules: {
+            recipient: ["{towerCall}"],
+            sender: "{callsign}",
+            requiredKeywords: [
+              { id: "pos_final_rwy", label: "Endanflug / Runway {rwy}", patterns: ["final", "base", "runway {rwy}", "{rwy}"], severity: "major", ruleExplain: "Gib an, dass du im Endanflug (Final/Base) auf Runway {rwy} bist." },
+              { id: "safety_gear", label: "Fahrwerksstatus ('gear down' / 'three green')", patterns: ["gear down", "three green", "3 green", "wheels down"], severity: "critical", ruleExplain: "KRITISCH: Im militärischen Endanflug muss der Fahrwerksstatus ('gear down' / 'three green') zwingend gemeldet werden!" }
+            ]
+          },
+          stationReply: "{callsign}, {towerCall}, wind {wind}, runway {rwy}, cleared to land."
+        }
+      ],
+
+      scenarios: [
+        {
+          id: "atc_full_dep",
+          stationType: "atc",
+          title: "ATC Szenario 1: Kompletter Abflug (Startup → Taxi → Hold Short & Takeoff)",
+          briefing: "Führe einen kompletten, dreistufigen Abflug von {airfieldName} (Runway {rwy}, QNH {qnh}, Info {info}) durch: 1. Startup anfordern, 2. Rollanweisung mit Hold Short bestätigen, 3. Am Haltepunkt 'ready for departure' melden.",
+          steps: [
+            {
+              stepTitle: "Schritt 1/3: Startup auf dem Vorfeld anfordern",
+              systemPrompt: "SITUATION: Du stehst geparkt auf dem Ramp von {airfieldName} (Wetter-Info {info}). Funkgerät auf {freqUHF}. Fordere bei {groundCall} den Triebwerksstart (Startup) an.",
+              modelSolution: "{groundCall}, {callsign}, on the ramp with information {info}, request startup.",
+              hint4W: ["{groundCall}", "{callsign}", "on the ramp, info {info}", "request startup"],
+              evalRules: {
+                recipient: ["{groundCall}", "{towerCall}"],
+                sender: "{callsign}",
+                requiredKeywords: [
+                  { id: "intent_startup", label: "Startup-Anfrage ('request startup')", patterns: ["startup", "start up", "engine start"], severity: "major", ruleExplain: "Fordere mit 'request startup' die Anlassfreigabe an." }
+                ]
+              },
+              stationSuccessReply: "{callsign}, {groundCall}, startup approved. Taxi to holding point runway {rwy} via {taxiRoute}, QNH {qnh}, hold short runway {rwy}."
+            },
+            {
+              stepTitle: "Schritt 2/3: Pflicht-Readback der Roll- und Halteanweisung",
+              systemPrompt: "SITUATION: {groundCall} hat dir soeben die Rollfreigabe zur Runway {rwy} (QNH {qnh}) mit der Anweisung 'hold short runway {rwy}' erteilt. Gib das vollständige Sicherheits-Readback!",
+              modelSolution: "{groundCall}, {callsign}, taxi to runway {rwy}, QNH {qnh}, hold short runway {rwy}.",
+              hint4W: ["{groundCall}", "{callsign}", "taxi to runway {rwy}, QNH {qnh}", "hold short runway {rwy}"],
+              evalRules: {
+                recipient: ["{groundCall}", "{towerCall}"],
+                sender: "{callsign}",
+                requiredKeywords: [
+                  { id: "readback_holdshort", label: "Readback 'hold short'", patterns: ["hold short", "holding short"], severity: "critical", ruleExplain: "KRITISCH: 'Hold short' muss zwingend zurückgelesen werden!" },
+                  { id: "readback_rwy", label: "Runway {rwy}", patterns: ["{rwy}"], severity: "critical", ruleExplain: "KRITISCH: Die zugewiesene Runway {rwy} muss bestätigt werden." }
+                ]
+              },
+              stationSuccessReply: "{callsign}, readback correct. Contact {towerCall} on {freqUHF} when holding short runway {rwy}."
+            },
+            {
+              stepTitle: "Schritt 3/3: Am Haltepunkt Abflugbereitschaft melden",
+              systemPrompt: "SITUATION: Du bist am Haltepunkt der Runway {rwy} angekommen. Melde dich bei {towerCall} abflugbereit (Denke an die ICAO-Regel: 'departure' statt 'takeoff'!).",
+              modelSolution: "{towerCall}, {callsign}, holding short runway {rwy}, ready for departure.",
+              hint4W: ["{towerCall}", "{callsign}", "holding short runway {rwy}", "ready for departure"],
+              evalRules: {
+                recipient: ["{towerCall}"],
+                sender: "{callsign}",
+                forbidPrematureTakeoff: true,
+                requiredKeywords: [
+                  { id: "pos_holdshort", label: "Position 'holding short' / Runway {rwy}", patterns: ["holding short", "hold short", "runway {rwy}"], severity: "major", ruleExplain: "Melde deine Position am Haltepunkt der Runway {rwy}." },
+                  { id: "intent_departure", label: "'ready for departure'", patterns: ["departure"], severity: "major", ruleExplain: "Nutze 'ready for departure' vor dem Erhalt der Startfreigabe." }
+                ]
+              },
+              stationSuccessReply: "{callsign}, {towerCall}, wind {wind}, runway {rwy}, cleared for takeoff! Good hunting."
+            }
+          ]
+        },
+        {
+          id: "atc_approach_land",
+          stationType: "atc",
+          title: "ATC Szenario 2: Rückkehr, Anflug & Landefreigabe (Inbound → Final Gear Down)",
+          briefing: "Du kehrst vom Einsatz nach {airfieldName} zurück. Melde dich zuerst 15 NM vor dem Platz 'inbound for landing' und anschließend im Endanflug auf Runway {rwy} mit ausgefahrenem Fahrwerk ('gear down / three green').",
+          steps: [
+            {
+              stepTitle: "Schritt 1/2: Anflugmeldung 15 NM vor dem Flugplatz",
+              systemPrompt: "SITUATION: Du bist 15 NM außerhalb von {airfieldName} auf 5.000 ft. Melde dich bei {approachCall} (oder {towerCall}) 'inbound for landing'.",
+              modelSolution: "{approachCall}, {callsign}, 15 miles out at 5,000 feet, inbound for landing.",
+              hint4W: ["{approachCall}", "{callsign}", "15 miles out at 5,000 feet", "inbound for landing"],
+              evalRules: {
+                recipient: ["{approachCall}", "{towerCall}"],
+                sender: "{callsign}",
+                requiredKeywords: [
+                  { id: "intent_inbound", label: "'inbound' / 'landing'", patterns: ["inbound", "landing"], severity: "major", ruleExplain: "Kündige deinen Landeanflug mit 'inbound for landing' an." }
+                ]
+              },
+              stationSuccessReply: "{callsign}, {approachCall}, proceed to final runway {rwy}, QNH {qnh}, report final with gear down."
+            },
+            {
+              stepTitle: "Schritt 2/2: Endanflug & Fahrwerksmeldung (Gear Down)",
+              systemPrompt: "SITUATION: Du bist eingedreht ins Final auf Runway {rwy}. Fahrwerk ist ausgefahren und verriegelt. Melde dich bei {towerCall} für die Landefreigabe.",
+              modelSolution: "{towerCall}, {callsign}, final runway {rwy}, gear down, three green.",
+              hint4W: ["{towerCall}", "{callsign}", "final runway {rwy}", "gear down, three green"],
+              evalRules: {
+                recipient: ["{towerCall}"],
+                sender: "{callsign}",
+                requiredKeywords: [
+                  { id: "pos_final_rwy", label: "'final' + Runway {rwy}", patterns: ["final", "runway {rwy}", "{rwy}"], severity: "major", ruleExplain: "Nenne Endanflug (Final) und Runway {rwy}." },
+                  { id: "safety_gear", label: "Fahrwerk ('gear down' / 'three green')", patterns: ["gear down", "three green", "3 green", "wheels down"], severity: "critical", ruleExplain: "KRITISCH: Ohne 'gear down' / 'three green' gibt der militärische Tower keine Landefreigabe!" }
+                ]
+              },
+              stationSuccessReply: "{callsign}, {towerCall}, wind {wind}, runway {rwy}, cleared to land."
+            }
+          ]
+        },
+        {
+          id: "awacs_intercept",
+          stationType: "awacs",
+          title: "AWACS Szenario 3: Luftlagebild & Abfangeinsatz (Picture → Bogey Dope → Declare)",
+          briefing: "Arbeite auf 251.000 MHz mit AWACS ('Overlord 1-1') zusammen: 1. Check-In & Picture anfordern, 2. Zielpeilung zur nächsten Gruppe (Bogey Dope) abrufen, 3. Radarkontakt identifizieren lassen (Declare).",
+          steps: [
+            {
+              stepTitle: "Schritt 1/3: Check-In bei Overlord 1-1 & Request Picture",
+              systemPrompt: "SITUATION: Du bist auf 25.000 ft (Angels 25) im Einsatzgebiet angekommen. Melde dich bei 'Overlord 1-1' und fordere ein 'Picture' an.",
+              modelSolution: "Overlord 1-1, {callsign}, checking in angels 25, request picture.",
+              hint4W: ["Overlord 1-1", "{callsign}", "checking in angels 25", "request picture"],
+              evalRules: {
+                recipient: ["overlord", "overlord 1-1", "awacs"],
+                sender: "{callsign}",
+                requiredKeywords: [
+                  { id: "awacs_picture", label: "'request picture' / 'checking in'", patterns: ["picture", "check in", "checking in"], severity: "major", ruleExplain: "Fordere das Gesamtlagebild mit 'request picture' an." }
+                ]
+              },
+              stationSuccessReply: "{callsign}, Overlord 1-1, two groups: North group Bullseye 010 for 40 at 26,000 hot; South group Bullseye 140 for 22 at 18,000 flanking."
+            },
+            {
+              stepTitle: "Schritt 2/3: Gezielter Bogey Dope zur nächsten Feindgruppe",
+              systemPrompt: "SITUATION: Du möchtest die direkte BRAA-Peilung zur nächstgelegenen Gruppe abfragen. Fordere bei 'Overlord 1-1' einen 'Bogey Dope' an.",
+              modelSolution: "Overlord 1-1, {callsign}, request bogey dope.",
+              hint4W: ["Overlord 1-1", "{callsign}", "(Tactical)", "request bogey dope"],
+              evalRules: {
+                recipient: ["overlord", "overlord 1-1", "awacs"],
+                sender: "{callsign}",
+                requiredKeywords: [
+                  { id: "awacs_bogey_declare", label: "'bogey dope'", patterns: ["bogey dope"], severity: "major", ruleExplain: "Verwende den NATO-Brevity-Begriff 'bogey dope'." }
+                ]
+              },
+              stationSuccessReply: "{callsign}, Overlord 1-1, nearest group BRAA 135 for 15, at 18,000, hot."
+            },
+            {
+              stepTitle: "Schritt 3/3: Freund-Feind-Abfrage ('Declare')",
+              systemPrompt: "SITUATION: Du hast den Kontakt auf deinem Radar gelockt (STT/TWS). Fordere bei 'Overlord 1-1' ein 'Declare' zur Identifikation an.",
+              modelSolution: "Overlord 1-1, {callsign}, declare.",
+              hint4W: ["Overlord 1-1", "{callsign}", "on radar lock", "declare"],
+              evalRules: {
+                recipient: ["overlord", "overlord 1-1", "awacs"],
+                sender: "{callsign}",
+                requiredKeywords: [
+                  { id: "awacs_bogey_declare", label: "'declare'", patterns: ["declare"], severity: "major", ruleExplain: "Nutze 'declare' zur IFF-Überprüfung eines aufgeschalteten Kontakts." }
+                ]
+              },
+              stationSuccessReply: "{callsign}, Overlord 1-1, target is hostile! Cleared to engage."
+            }
+          ]
+        },
+        {
+          id: "wingman_tactical",
+          stationType: "wingman",
+          title: "Wingman Szenario 4: Rottenführung & Zielzuweisung (Trail Formation → Engage)",
+          briefing: "Kommuniziere auf Intra-Flight (305.000 MHz) mit deinem Flügelmann ('{wingmanCallsign}' / 'Two'): Weise ihm zuerst die Formation zu und befiehl anschließend den Angriff auf das Ziel.",
+          steps: [
+            {
+              stepTitle: "Schritt 1/2: Wingman in taktische Formation beordern",
+              systemPrompt: "SITUATION: Rufe deinen Flügelmann ('{wingmanCallsign}' oder 'Two') als {callsign} und weise ihn an, in 'trail' oder 'spread' Formation zu gehen.",
+              modelSolution: "{wingmanCallsign}, {callsign}, go trail formation.",
+              hint4W: ["{wingmanCallsign}", "{callsign}", "intra-flight", "go trail / spread"],
+              evalRules: {
+                recipient: ["{wingmanCallsign}", "two", "2"],
+                sender: "{callsign}",
+                requiredKeywords: [
+                  { id: "wingman_form", label: "Formationsbefehl ('trail', 'spread', 'echelon', 'formation', 'line abreast')", patterns: ["trail", "spread", "echelon", "formation", "line abreast", "wedge"], severity: "major", ruleExplain: "Gib deinem Wingman eine klare Formationsanweisung (z. B. 'go trail' oder 'go spread')." }
+                ]
+              },
+              stationSuccessReply: "Two, copy, moving to trail."
+            },
+            {
+              stepTitle: "Schritt 2/2: Angriffsbefehl an Wingman ('Engage Bandits')",
+              systemPrompt: "SITUATION: Feindliche Jäger voraus. Befiehl deinem Wingman ('{wingmanCallsign}' oder 'Two') den Angriff ('engage bandits' oder 'engage targets').",
+              modelSolution: "{wingmanCallsign}, {callsign}, engage bandits.",
+              hint4W: ["{wingmanCallsign}", "{callsign}", "hostiles ahead", "engage bandits"],
+              evalRules: {
+                recipient: ["{wingmanCallsign}", "two", "2"],
+                sender: "{callsign}",
+                requiredKeywords: [
+                  { id: "wingman_engage", label: "Einsatzbefehl ('engage', 'attack', 'press')", patterns: ["engage", "attack", "press", "weapons free"], severity: "major", ruleExplain: "Erteile den Angriffsbefehl mit 'engage bandits' oder 'engage targets'." }
+                ]
+              },
+              stationSuccessReply: "Two, engaging bandit! Fox Three!"
+            }
+          ]
+        },
+        {
+          id: "formation_lead",
+          stationType: "formation",
+          title: "Formation Szenario 5: Schwarm-Check-In & Fence-In vor der Kampfzone",
+          briefing: "Als Flight Lead von '{flightName} Flight' führst du einen Check-In auf 305.000 MHz durch und befiehlst vor dem Einflug in feindliches Gebiet 'Fence In' (Master Arm, Lichter aus, RWR/ECM an).",
+          steps: [
+            {
+              stepTitle: "Schritt 1/2: Schwarm Check-In & Frequenzwechsel",
+              systemPrompt: "SITUATION: Rufe '{flightName} Flight' als {callsign} zum 'check in' und kommandiere 'push 305'.",
+              modelSolution: "{flightName} Flight, {callsign}, check in, push 305.",
+              hint4W: ["{flightName} Flight", "{callsign}", "departure climb", "check in, push 305"],
+              evalRules: {
+                recipient: ["{flightName}", "flight"],
+                sender: "{callsign}",
+                requiredKeywords: [
+                  { id: "brevity_checkin_push", label: "'check in' oder 'push'", patterns: ["check in", "check", "push"], severity: "major", ruleExplain: "Führe einen 'check in' oder 'push' Befehl durch." }
+                ]
+              },
+              stationSuccessReply: "Two! ... Three! ... Four! Up on 305."
+            },
+            {
+              stepTitle: "Schritt 2/2: Fence-In Befehl inkl. Fuel-Status",
+              systemPrompt: "SITUATION: Ihr überfliegt die Frontlinie (FEBA). Befiehl '{flightName} Flight' jetzt 'fence in' und frag den Kraftstoffstatus ('check fuel' / 'say state') ab.",
+              modelSolution: "{flightName} Flight, {callsign}, fence in, say fuel state.",
+              hint4W: ["{flightName} Flight", "{callsign}", "crossing FEBA", "fence in, say fuel state"],
+              evalRules: {
+                recipient: ["{flightName}", "flight"],
+                sender: "{callsign}",
+                requiredKeywords: [
+                  { id: "brevity_fencein", label: "Brevity 'fence in'", patterns: ["fence in", "fencing in"], severity: "major", ruleExplain: "'Fence in' weist den gesamten Schwarm an, Gefechtsbereitschaft herzustellen." }
+                ]
+              },
+              stationSuccessReply: "Two, fenced in, 8.5! ... Three, fenced in, 8.2! ... Four, fenced in, 8.4!"
+            }
+          ]
+        }
+      ],
+
+      errorCategories: {
+        empty_or_invalid: { title: "Leere oder unverständliche Eingabe", severity: "critical", lessonId: 1 },
+        callsign_order: { title: "Vertauschte Rufzeichen-Reihenfolge (Wer vor Wen)", severity: "critical", lessonId: 1 },
+        missing_station: { title: "Empfänger-Funkstelle fehlt", severity: "major", lessonId: 1 },
+        missing_callsign: { title: "Eigenes Rufzeichen (Callsign) fehlt", severity: "major", lessonId: 1 },
+        premature_takeoff: { title: "Verbotenes Wort 'Takeoff' vor Startfreigabe", severity: "critical", lessonId: 5 },
+        readback_holdshort: { title: "Fehlendes Readback von 'Hold Short'", severity: "critical", lessonId: 4 },
+        readback_rwy: { title: "Fehlendes Readback der aktiven Runway", severity: "critical", lessonId: 4 },
+        safety_gear: { title: "Fehlende Fahrwerksmeldung ('Gear Down / Three Green')", severity: "critical", lessonId: 10 },
+        intent_missing: { title: "Unvollständige Anfrage / Schlüsselbegriff fehlt", severity: "major", lessonId: 2 },
+        filler_politeness: { title: "Unnötige Höflichkeitsfloskeln ('please/thanks') im Funk", severity: "minor", lessonId: 1 }
+      }
+    };
+    /**
+     * ============================================================================
+     * LAYER 2: LOCAL PERSISTENCE (IndexedDB + LocalStorage Mirror)
+     * ============================================================================
+     */
+    const StorageManager = {
+      dbName: "MilitaryRadioTrainerDB",
+      storeName: "appState",
+      lsKey: "mrt_dcs_state_v1",
+      db: null,
+
+      getDefaultState() {
+        return {
+          selectedAircraftId: "f16c",
+          customCallsign: "Viper 1-1",
+          selectedStationId: "atc",
+          selectedAirfieldId: "kobuleti",
+          currentLessonId: 1,
+          completedLessons: [],
+          xp: 0,
+          difficulty: "beginner",
+          audioEnabled: false,
+          history: [],
+          errorCounts: {}
+        };
+      },
+
+      async init() {
+        return new Promise((resolve) => {
+          if (!window.indexedDB) {
+            resolve(false);
+            return;
+          }
+          try {
+            const req = indexedDB.open(this.dbName, 1);
+            req.onupgradeneeded = (e) => {
+              const db = e.target.result;
+              if (!db.objectStoreNames.contains(this.storeName)) {
+                db.createObjectStore(this.storeName);
+              }
+            };
+            req.onsuccess = (e) => {
+              this.db = e.target.result;
+              resolve(true);
+            };
+            req.onerror = () => resolve(false);
+          } catch (err) {
+            resolve(false);
+          }
+        });
+      },
+
+      async loadState() {
+        let state = null;
+        if (this.db) {
+          state = await new Promise((resolve) => {
+            try {
+              const tx = this.db.transaction(this.storeName, "readonly");
+              const req = tx.objectStore(this.storeName).get("profile");
+              req.onsuccess = () => resolve(req.result || null);
+              req.onerror = () => resolve(null);
+            } catch (e) {
+              resolve(null);
+            }
+          });
+        }
+        if (!state) {
+          try {
+            const raw = localStorage.getItem(this.lsKey);
+            if (raw) state = JSON.parse(raw);
+          } catch (e) {}
+        }
+        return Object.assign(this.getDefaultState(), state || {});
+      },
+
+      async saveState(state) {
+        try {
+          localStorage.setItem(this.lsKey, JSON.stringify(state));
+        } catch (e) {}
+        if (this.db) {
+          return new Promise((resolve) => {
+            try {
+              const tx = this.db.transaction(this.storeName, "readwrite");
+              tx.objectStore(this.storeName).put(state, "profile");
+              tx.oncomplete = () => resolve(true);
+              tx.onerror = () => resolve(false);
+            } catch (e) {
+              resolve(false);
+            }
+          });
+        }
+        return true;
+      }
+    };
+
+    /**
+     * ============================================================================
+     * LAYER 3: COCKPIT AUDIO ENGINE (PTT SQUELCH & SPEECH SYNTHESIS)
+     * ============================================================================
+     */
+    const AudioEngine = {
+      playClick() {
+        if (!AppUI.state || !AppUI.state.audioEnabled) return;
+        try {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (!Ctx) return;
+          const ctx = new Ctx();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(1400, ctx.currentTime);
+          gain.gain.setValueAtTime(0.08, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.06);
+        } catch (e) {}
+      },
+
+      speakStation(text) {
+        if (!AppUI.state || !AppUI.state.audioEnabled) return;
+        if (!("speechSynthesis" in window)) return;
+        try {
+          window.speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(text);
+          u.lang = "en-US";
+          u.rate = 1.05;
+          u.pitch = 0.92;
+          window.speechSynthesis.speak(u);
+        } catch (e) {}
+      }
+    };
+
+    /**
+     * ============================================================================
+     * LAYER 4: RADIO EVALUATION ENGINE (NLP PHRASEOLOGY & SAFETY CHECKER)
+     * ============================================================================
+     */
+    const RadioEvaluator = {
+      normalize(str) {
+        if (!str) return "";
+        return str
+          .toLowerCase()
+          .replace(/zero/g, "0")
+          .replace(/one/g, "1")
+          .replace(/two/g, "2")
+          .replace(/three|tree/g, "3")
+          .replace(/four|fower/g, "4")
+          .replace(/five|fife/g, "5")
+          .replace(/six/g, "6")
+          .replace(/seven/g, "7")
+          .replace(/eight/g, "8")
+          .replace(/nine|niner/g, "9")
+          .replace(/[,.;:!?'"()-]/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+      },
+
+      evaluate(rawInput, evalRules, ctx, modelSolution) {
+        const checks = [];
+        const triggeredErrors = [];
+        const rawTrimmed = (rawInput || "").trim();
+        const normInput = this.normalize(rawInput);
+
+        // 1. Check empty / nonsensical input
+        if (!rawTrimmed || normInput.length < 4 || !/[a-z]/i.test(normInput)) {
+          checks.push({
+            status: "critical",
+            text: "Kritischer Fehler: Dein Funkspruch ist leer oder unverständlich. Drücke PTT nur bei einer klaren Meldung."
+          });
+          triggeredErrors.push("empty_or_invalid");
+          return {
+            score: 0,
+            overallSeverity: "critical",
+            passed: false,
+            checks,
+            triggeredErrors,
+            modelSolution,
+            stationReaction: `${ctx.callsign}, station calling, say again your last transmission.`
+          };
+        }
+
+        let score = 100;
+
+        // Resolve interpolated recipients & sender
+        const expectedRecipients = (evalRules.recipient || []).map(r =>
+          this.normalize(DomainData.interpolate(r, ctx))
+        );
+        const expectedSender = this.normalize(DomainData.interpolate(evalRules.sender || "{callsign}", ctx));
+        const senderBase = expectedSender.split(" ")[0];
+
+        // 2. Check Recipient (Wen rufe ich?)
+        let matchedRecipient = null;
+        let recipientIndex = -1;
+        for (const rec of expectedRecipients) {
+          const idx = normInput.indexOf(rec);
+          if (idx !== -1) {
+            matchedRecipient = rec;
+            recipientIndex = idx;
+            break;
+          }
+          const firstWord = rec.split(" ")[0];
+          if (firstWord && firstWord.length > 2 && normInput.indexOf(firstWord) !== -1) {
+            matchedRecipient = firstWord;
+            recipientIndex = normInput.indexOf(firstWord);
+            break;
+          }
+        }
+
+        if (matchedRecipient) {
+          checks.push({
+            status: "ok",
+            text: `Empfänger korrekt genannt (${DomainData.interpolate(evalRules.recipient[0], ctx)}).`
+          });
+        } else {
+          score -= 25;
+          triggeredErrors.push("missing_station");
+          checks.push({
+            status: "major",
+            text: `Relevanter Fehler: Die angerufene Funkstelle (${DomainData.interpolate(evalRules.recipient[0], ctx)}) fehlt am Anfang des Funkspruchs.`
+          });
+        }
+
+        // 3. Check Own Callsign (Wer bin ich?)
+        let senderIndex = normInput.indexOf(expectedSender);
+        if (senderIndex === -1 && senderBase.length > 2) {
+          senderIndex = normInput.indexOf(senderBase);
+        }
+
+        if (senderIndex !== -1) {
+          checks.push({
+            status: "ok",
+            text: `Eigenes Rufzeichen (${ctx.callsign}) enthalten.`
+          });
+        } else {
+          score -= 25;
+          triggeredErrors.push("missing_callsign");
+          checks.push({
+            status: "major",
+            text: `Relevanter Fehler: Dein eigenes Rufzeichen (${ctx.callsign}) fehlt. Ohne Absender weiß die Gegenstelle nicht, wem sie antworten soll.`
+          });
+        }
+
+        // 4. Check Callsign Order (Wen VOR Wer!)
+        if (recipientIndex !== -1 && senderIndex !== -1) {
+          if (senderIndex < recipientIndex) {
+            score -= 35;
+            triggeredErrors.push("callsign_order");
+            checks.push({
+              status: "critical",
+              text: `Kritischer Strukturfehler: Du hast dein eigenes Rufzeichen VOR der gerufenen Funkstelle genannt. Im Flugfunk gilt zwingend: Zuerst WEN du rufst, danach WER du bist!`
+            });
+          } else {
+            checks.push({
+              status: "ok",
+              text: "Reihenfolge (1. Empfänger → 2. Eigenes Callsign) vorbildlich eingehalten."
+            });
+          }
+        }
+
+        // 5. Check Forbidden Premature "Takeoff"
+        if (evalRules.forbidPrematureTakeoff && /\btake\s?off\b/i.test(rawTrimmed)) {
+          score -= 45;
+          triggeredErrors.push("premature_takeoff");
+          checks.push({
+            status: "critical",
+            text: "Kritischer Sicherheitsverstoß (ICAO Doc 9432): Verwende am Haltepunkt NIEMALS das Wort 'Takeoff' (z. B. 'ready for takeoff'). Nutze immer 'ready for departure'! 'Takeoff' ist ausschließlich für die tatsächliche Startfreigabe reserviert."
+          });
+        }
+
+        // 6. Check Required Keywords / Readbacks
+        for (const req of (evalRules.requiredKeywords || [])) {
+          let found = false;
+          for (const pat of req.patterns) {
+            const resolvedPat = this.normalize(DomainData.interpolate(pat, ctx));
+            if (normInput.includes(resolvedPat)) {
+              found = true;
+              break;
+            }
+          }
+          if (found) {
+            checks.push({
+              status: "ok",
+              text: `Pflichtbestandteil erfüllt: ${DomainData.interpolate(req.label, ctx)}.`
+            });
+          } else {
+            const penalty = req.severity === "critical" ? 40 : 25;
+            score -= penalty;
+            const errKey = DomainData.errorCategories[req.id] ? req.id : "intent_missing";
+            triggeredErrors.push(errKey);
+            checks.push({
+              status: req.severity,
+              text: `${req.severity === "critical" ? "Kritischer Fehler" : "Fehlender Bestandteil"} (${DomainData.interpolate(req.label, ctx)}): ${DomainData.interpolate(req.ruleExplain, ctx)}`
+            });
+          }
+        }
+
+        // 7. Check Polite Fillers / Chatter (Minor)
+        if (/\b(please|thank you|thanks|hello|hi there|uhm)\b/i.test(rawTrimmed)) {
+          score -= 8;
+          triggeredErrors.push("filler_politeness");
+          checks.push({
+            status: "minor",
+            text: "Stil-Hinweis (Minor): Verzichte im militärischen Flugfunk auf Höflichkeitsfloskeln wie 'please', 'hello' oder 'thanks', um die Frequenz kurz zu halten."
+          });
+        }
+
+        score = Math.max(0, Math.min(100, score));
+
+        let overallSeverity = "ok";
+        if (checks.some(c => c.status === "critical")) overallSeverity = "critical";
+        else if (checks.some(c => c.status === "major")) overallSeverity = "major";
+        else if (checks.some(c => c.status === "minor")) overallSeverity = "minor";
+
+        const passed = overallSeverity !== "critical" && score >= 65;
+
+        let stationReaction = "";
+        if (!passed) {
+          if (triggeredErrors.includes("premature_takeoff")) {
+            stationReaction = `${ctx.callsign}, negative! Never use the word 'takeoff' prior to clearance. Hold short and say again using 'departure'.`;
+          } else if (triggeredErrors.includes("readback_holdshort") || triggeredErrors.includes("readback_rwy")) {
+            stationReaction = `${ctx.callsign}, negative, read back hold short instructions and active runway ${ctx.airfield.activeRunway}.`;
+          } else if (triggeredErrors.includes("safety_gear")) {
+            stationReaction = `${ctx.callsign}, check wheels down! Report gear status on final.`;
+          } else if (triggeredErrors.includes("callsign_order")) {
+            stationReaction = `Station calling, state recipient callsign first, then your own callsign. Say again.`;
+          } else {
+            stationReaction = `${ctx.callsign}, say again your last transmission, check required phraseology.`;
+          }
+        } else {
+          stationReaction = "Transmission acknowledged.";
+        }
+
+        return {
+          score,
+          overallSeverity,
+          passed,
+          checks,
+          triggeredErrors,
+          modelSolution,
+          stationReaction
+        };
+      }
+    };
+    /**
+     * ============================================================================
+     * LAYER 5: APPLICATION UI & CONTROLLER (AppUI)
+     * ============================================================================
+     */
+    const AppUI = {
+      state: null,
+      currentView: "dashboard",
+      currentScenarioId: "atc_full_dep",
+      currentScenarioStep: 0,
+      trainerLog: [],
+
+      async init() {
+        const idbOk = await StorageManager.init();
+        this.state = await StorageManager.loadState();
+
+        const storageEl = document.getElementById("dash-storage-status");
+        if (storageEl) {
+          storageEl.textContent = idbOk
+            ? "Speicher: IndexedDB Aktiv"
+            : "Speicher: LocalStorage Fallback";
+        }
+
+        const audioCheckbox = document.getElementById("setting-audio-fx");
+        if (audioCheckbox) {
+          audioCheckbox.checked = !!this.state.audioEnabled;
+        }
+
+        const diffSelect = document.getElementById("trainer-difficulty");
+        if (diffSelect && this.state.difficulty) {
+          diffSelect.value = this.state.difficulty;
+        }
+
+        this.populateScenarioDropdown();
+        this.renderAll();
+        this.initTrainerScenario(this.currentScenarioId);
+      },
+
+      getContext() {
+        const aircraft =
+          DomainData.aircraft.find(a => a.id === this.state.selectedAircraftId) ||
+          DomainData.aircraft[0];
+        const station =
+          DomainData.stations.find(s => s.id === this.state.selectedStationId) ||
+          DomainData.stations[0];
+        const airfield =
+          DomainData.airfields.find(f => f.id === this.state.selectedAirfieldId) ||
+          DomainData.airfields[0];
+
+        const callsign = (this.state.customCallsign || aircraft.defaultCallsign).trim();
+        const flightName = callsign.split(" ")[0] || "Viper";
+        const wingmanCallsign = callsign.includes("-")
+          ? callsign.replace(/-\d+$/, "-2")
+          : `${flightName} 1-2`;
+
+        return {
+          aircraft,
+          station,
+          airfield,
+          callsign,
+          flightName,
+          wingmanCallsign
+        };
+      },
+
+      switchView(viewId) {
+        this.currentView = viewId;
+        document.querySelectorAll(".view-section").forEach(sec => {
+          sec.classList.toggle("active", sec.id === `view-${viewId}`);
+        });
+        document.querySelectorAll(".nav-btn").forEach(btn => {
+          btn.classList.toggle("active", btn.getAttribute("data-view") === viewId);
+        });
+        this.renderAll();
+      },
+
+      renderAll() {
+        this.updateTopbarAndUFC();
+        this.renderDashboard();
+        this.renderConfig();
+        this.renderLessons();
+        this.renderTrainerMeta();
+        this.renderAnalytics();
+      },
+
+      updateTopbarAndUFC() {
+        const ctx = this.getContext();
+
+        const topAc = document.getElementById("top-aircraft");
+        const topSt = document.getElementById("top-station");
+        const topFreq = document.getElementById("top-freq");
+        const topXp = document.getElementById("top-xp");
+
+        if (topAc) topAc.textContent = `${ctx.aircraft.shortCode} // ${ctx.callsign.toUpperCase()}`;
+
+        let activeFreqText = ctx.airfield.freqUHF + " (UHF)";
+        let stationLabel = `ATC // ${ctx.airfield.name.toUpperCase()}`;
+
+        if (ctx.station.id !== "atc") {
+          activeFreqText = `${ctx.station.freqUHF} (UHF)`;
+          stationLabel = `${ctx.station.badge} // ${ctx.station.stationCallsign.toUpperCase()}`;
+        }
+        if (topSt) topSt.textContent = stationLabel;
+        if (topFreq) topFreq.textContent = activeFreqText;
+        if (topXp) {
+          topXp.textContent = `${this.state.xp} XP (${this.state.completedLessons.length}/10 Lektionen)`;
+        }
+
+        const pct = Math.round((this.state.completedLessons.length / DomainData.lessons.length) * 100);
+        const bProg = document.getElementById("nav-badge-progress");
+        const bAc = document.getElementById("nav-badge-ac");
+        const bLes = document.getElementById("nav-badge-lessons");
+        const bHist = document.getElementById("nav-badge-history");
+
+        if (bProg) bProg.textContent = `${pct}%`;
+        if (bAc) bAc.textContent = ctx.aircraft.shortCode;
+        if (bLes) bLes.textContent = `${this.state.completedLessons.length}/10`;
+        if (bHist) bHist.textContent = `${this.state.history.length}`;
+
+        const primaryRadio = ctx.aircraft.radios[0];
+        const ufcName = document.getElementById("ufc-radio-name");
+        const ufcStatus = document.getElementById("ufc-band-status");
+        const ufcFreq = document.getElementById("ufc-freq-readout");
+        const ufcHint = document.getElementById("ufc-cockpit-hint");
+
+        if (ufcName) ufcName.textContent = primaryRadio.model;
+        if (ufcStatus) {
+          ufcStatus.textContent = "BAND OK";
+          ufcStatus.style.color = "var(--hud-green)";
+        }
+        const rawFreq = (ctx.station.id === "atc" ? ctx.airfield.freqUHF : ctx.station.freqUHF).split(" ")[0];
+        if (ufcFreq) ufcFreq.textContent = `${rawFreq} AM`;
+        if (ufcHint) ufcHint.textContent = primaryRadio.control;
+      },
+
+      async recordAttempt(modeLabel, rawInput, evalResult) {
+        const ctx = this.getContext();
+        if (evalResult.passed) {
+          this.state.xp += Math.round(evalResult.score / 4);
+        } else {
+          this.state.xp += 5;
+        }
+
+        for (const errKey of evalResult.triggeredErrors) {
+          this.state.errorCounts[errKey] = (this.state.errorCounts[errKey] || 0) + 1;
+        }
+
+        this.state.history.unshift({
+          timestamp: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+          mode: modeLabel,
+          aircraftAndStation: `${ctx.aircraft.shortCode} (${ctx.callsign}) → ${ctx.station.id === "atc" ? ctx.airfield.callsignTower : ctx.station.stationCallsign}`,
+          input: rawInput || "(leer)",
+          score: evalResult.score,
+          severity: evalResult.overallSeverity
+        });
+
+        if (this.state.history.length > 50) {
+          this.state.history = this.state.history.slice(0, 50);
+        }
+
+        await StorageManager.saveState(this.state);
+        this.updateTopbarAndUFC();
+      },
+
+      getTopWeaknessKey() {
+        const entries = Object.entries(this.state.errorCounts || {});
+        if (!entries.length) return null;
+        entries.sort((a, b) => b[1] - a[1]);
+        return entries[0][0];
+      },
+
+      renderDashboard() {
+        const ctx = this.getContext();
+        const doneCount = this.state.completedLessons.length;
+        const curLesson =
+          DomainData.lessons.find(l => l.id === this.state.currentLessonId) ||
+          DomainData.lessons[0];
+
+        const elDone = document.getElementById("dash-lessons-done");
+        const elStage = document.getElementById("dash-current-stage");
+        const elXp = document.getElementById("dash-total-xp");
+        const elAvg = document.getElementById("dash-avg-score");
+        const elAtt = document.getElementById("dash-total-attempts");
+        const elWeak = document.getElementById("dash-top-weakness");
+
+        if (elDone) elDone.textContent = `${doneCount} / ${DomainData.lessons.length}`;
+        if (elStage) elStage.textContent = `Aktuelle Stufe: ${curLesson.id} – ${curLesson.topic}`;
+        if (elXp) elXp.textContent = `${this.state.xp} XP`;
+
+        if (elAvg) {
+          if (this.state.history.length > 0) {
+            const sum = this.state.history.reduce((acc, h) => acc + (h.score || 0), 0);
+            elAvg.textContent = `Durchschnitt: ${Math.round(sum / this.state.history.length)} %`;
+          } else {
+            elAvg.textContent = "Durchschnitt: – %";
+          }
+        }
+        if (elAtt) elAtt.textContent = `${this.state.history.length}`;
+
+        const topWeakKey = this.getTopWeaknessKey();
+        if (elWeak) {
+          if (topWeakKey && DomainData.errorCategories[topWeakKey]) {
+            elWeak.textContent = DomainData.errorCategories[topWeakKey].title;
+          } else {
+            elWeak.textContent = "Noch keine Fehler erfasst";
+          }
+        }
+
+        const topicContainer = document.getElementById("dash-topic-bars");
+        if (topicContainer) {
+          const topics = ["Grundlagen", "ATC & Boden", "ATC & Start", "Formation & Wingman", "AWACS & Taktik", "Anflug & Landung"];
+          topicContainer.innerHTML = topics.map(t => {
+            const lessonsInTopic = DomainData.lessons.filter(l => l.topic === t);
+            const completedInTopic = lessonsInTopic.filter(l => this.state.completedLessons.includes(l.id)).length;
+            const pct = lessonsInTopic.length ? Math.round((completedInTopic / lessonsInTopic.length) * 100) : 0;
+            return `
+              <div class="progress-wrap">
+                <div class="progress-label">
+                  <span>${t}</span>
+                  <span>${completedInTopic}/${lessonsInTopic.length} (${pct}%)</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill" style="width:${pct}%"></div>
+                </div>
+              </div>
+            `;
+          }).join("");
+        }
+
+        const profileBox = document.getElementById("dash-active-profile");
+        if (profileBox) {
+          profileBox.innerHTML = `
+            <div><strong>Flugzeugmuster:</strong> ${ctx.aircraft.name} (<span style="color:var(--hud-green); font-family:var(--font-mono);">${ctx.callsign}</span>)</div>
+            <div><strong>Primäres Bordfunkgerät:</strong> ${ctx.aircraft.radios[0].model} (${ctx.aircraft.radios[0].range})</div>
+            <div><strong>Gewählte Funkstelle:</strong> ${ctx.station.name}</div>
+            <div><strong>Aktiver Flugplatz (ATC):</strong> ${ctx.airfield.name} — RWY ${ctx.airfield.activeRunway} | UHF ${ctx.airfield.freqUHF} | QNH ${ctx.airfield.sampleWeather.qnhInHg}</div>
+            <div style="font-size:0.78rem; color:var(--text-muted);">${ctx.airfield.sourceNote}</div>
+          `;
+        }
+      },
+
+      resumeLastLesson() {
+        this.switchView("lessons");
+      },
+
+      startWeaknessDrill() {
+        const topWeakKey = this.getTopWeaknessKey();
+        if (topWeakKey && DomainData.errorCategories[topWeakKey]) {
+          this.state.currentLessonId = DomainData.errorCategories[topWeakKey].lessonId || 1;
+        }
+        this.switchView("lessons");
+      },
+
+      renderConfig() {
+        const ctx = this.getContext();
+
+        const acGrid = document.getElementById("aircraft-selector-grid");
+        if (acGrid) {
+          acGrid.innerHTML = DomainData.aircraft.map(ac => {
+            const isSel = ac.id === this.state.selectedAircraftId;
+            return `
+              <div class="select-card ${isSel ? "selected" : ""}" onclick="AppUI.selectAircraft('${ac.id}')">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+                  <strong style="color:#fff;">${ac.name}</strong>
+                  <span class="tag ${isSel ? "tag-example" : "tag-dcs"}">${ac.shortCode}</span>
+                </div>
+                <div style="font-size:0.78rem; color:var(--text-muted); margin-bottom:0.4rem;">${ac.moduleRole}</div>
+                <div style="font-size:0.75rem; font-family:var(--font-mono); color:var(--hud-cyan);">
+                  Standard-Callsign: ${ac.defaultCallsign}
+                </div>
+              </div>
+            `;
+          }).join("");
+        }
+
+        const csInput = document.getElementById("custom-callsign-input");
+        if (csInput && document.activeElement !== csInput) {
+          csInput.value = this.state.customCallsign || ctx.aircraft.defaultCallsign;
+        }
+
+        const radioDetails = document.getElementById("aircraft-radio-details");
+        if (radioDetails) {
+          radioDetails.innerHTML = ctx.aircraft.radios.map(r =>
+            `<div style="margin-bottom:0.25rem;"><strong style="color:var(--hud-green); font-family:var(--font-mono);">[${r.id}] ${r.model}:</strong> ${r.range} — <em>${r.control}</em></div>`
+          ).join("");
+        }
+
+        const stList = document.getElementById("station-selector-list");
+        if (stList) {
+          stList.innerHTML = DomainData.stations.map(st => {
+            const isSel = st.id === this.state.selectedStationId;
+            return `
+              <div class="select-card ${isSel ? "selected" : ""}" onclick="AppUI.selectStation('${st.id}')">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <strong style="color:#fff;">${st.name}</strong>
+                  <span class="tag tag-standard">${st.badge}</span>
+                </div>
+                <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.25rem;">${st.description}</div>
+              </div>
+            `;
+          }).join("");
+        }
+
+        const afList = document.getElementById("airfield-selector-list");
+        if (afList) {
+          afList.innerHTML = DomainData.airfields.map(af => {
+            const isSel = af.id === this.state.selectedAirfieldId;
+            return `
+              <div class="select-card ${isSel ? "selected" : ""}" onclick="AppUI.selectAirfield('${af.id}')">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <strong style="color:#fff;">${af.name}</strong>
+                  <span class="tag tag-dcs">RWY ${af.activeRunway}</span>
+                </div>
+                <div style="font-size:0.78rem; font-family:var(--font-mono); color:var(--hud-amber); margin-top:0.2rem;">
+                  UHF: ${af.freqUHF} | VHF: ${af.freqVHF} | TACAN: ${af.tacan}
+                </div>
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">
+                  Wetter: Wind ${af.sampleWeather.wind}, QNH ${af.sampleWeather.qnhInHg} (${af.sampleWeather.qnhHpa} hPa), Info ${af.sampleWeather.infoLetter}
+                </div>
+              </div>
+            `;
+          }).join("");
+        }
+      },
+
+      async selectAircraft(aircraftId) {
+        const ac = DomainData.aircraft.find(a => a.id === aircraftId);
+        if (!ac) return;
+        this.state.selectedAircraftId = aircraftId;
+        this.state.customCallsign = ac.defaultCallsign;
+        await StorageManager.saveState(this.state);
+        this.renderAll();
+        this.initTrainerScenario(this.currentScenarioId);
+      },
+
+      async updateCustomCallsign(val) {
+        const cleaned = (val || "").trim();
+        if (cleaned) {
+          this.state.customCallsign = cleaned;
+          await StorageManager.saveState(this.state);
+          this.renderAll();
+          this.initTrainerScenario(this.currentScenarioId);
+        }
+      },
+
+      async selectStation(stationId) {
+        this.state.selectedStationId = stationId;
+        await StorageManager.saveState(this.state);
+        const matchingScenario = DomainData.scenarios.find(s => s.stationType === stationId);
+        if (matchingScenario) {
+          this.currentScenarioId = matchingScenario.id;
+          this.populateScenarioDropdown();
+          this.initTrainerScenario(this.currentScenarioId);
+        }
+        this.renderAll();
+      },
+
+      async selectAirfield(airfieldId) {
+        this.state.selectedAirfieldId = airfieldId;
+        await StorageManager.saveState(this.state);
+        this.renderAll();
+        this.initTrainerScenario(this.currentScenarioId);
+      },
+
+      renderLessons() {
+        const ctx = this.getContext();
+        const sidebar = document.getElementById("lesson-sidebar-list");
+        const panel = document.getElementById("lesson-content-panel");
+        if (!sidebar || !panel) return;
+
+        sidebar.innerHTML = DomainData.lessons.map(l => {
+          const isCur = l.id === this.state.currentLessonId;
+          const isDone = this.state.completedLessons.includes(l.id);
+          return `
+            <button class="lesson-step-btn ${isCur ? "active" : ""} ${isDone ? "done" : ""}" onclick="AppUI.selectLesson(${l.id})">
+              <div>
+                <div style="font-size:0.7rem; color:var(--text-muted); font-family:var(--font-mono);">${l.topic}</div>
+                <div style="font-size:0.85rem; font-weight:600;">Stufe ${l.id}: ${l.title.replace(/^Stufe \d+:\s*/, "")}</div>
+              </div>
+              <span style="font-family:var(--font-mono); font-size:0.8rem; color:${isDone ? "var(--hud-green)" : "var(--text-muted)"};">
+                ${isDone ? "✓" : "○"}
+              </span>
+            </button>
+          `;
+        }).join("");
+
+        const lesson =
+          DomainData.lessons.find(l => l.id === this.state.currentLessonId) ||
+          DomainData.lessons[0];
+
+        const exampleInterpolated = DomainData.interpolate(lesson.exampleCall, ctx);
+        const scenarioInterpolated = DomainData.interpolate(lesson.scenarioDesc, ctx);
+        const promptInterpolated = DomainData.interpolate(lesson.exercisePrompt, ctx);
+
+        panel.innerHTML = `
+          <div class="card-header">
+            <div>
+              <span class="tag tag-standard">${lesson.ruleBadge}</span>
+              <h3 style="color:#fff; margin-top:0.35rem;">${lesson.title}</h3>
+            </div>
+            <span class="tag tag-dcs">${lesson.sourceRef}</span>
+          </div>
+
+          <p style="font-size:0.9rem; color:var(--hud-green); margin-bottom:0.75rem;">
+            <strong>Lernziel:</strong> ${lesson.goal}
+          </p>
+
+          <div style="background:var(--bg-input); border:1px solid var(--border-dim); padding:0.85rem; border-radius:6px; font-size:0.88rem; margin-bottom:1rem;">
+            <strong>Hintergrund & Verfahren:</strong><br/>
+            ${DomainData.interpolate(lesson.theory, ctx)}
+          </div>
+
+          <h4 style="font-size:0.85rem; color:var(--text-muted); text-transform:uppercase; font-family:var(--font-mono);">
+            Anatomie des Funkspruchs (4-W-Struktur)
+          </h4>
+          <div class="anatomy-grid">
+            ${lesson.anatomy.map(a => `
+              <div class="anatomy-part">
+                <div class="anatomy-step">${a.step}</div>
+                <div class="anatomy-phrase">${DomainData.interpolate(a.phrase, ctx)}</div>
+                <div class="anatomy-desc">${DomainData.interpolate(a.desc, ctx)}</div>
+              </div>
+            `).join("")}
+          </div>
+
+          <div style="background:rgba(0,230,118,0.07); border:1px solid var(--border-hud); padding:0.85rem; border-radius:6px; margin:1rem 0;">
+            <div style="font-size:0.75rem; color:var(--hud-green); font-family:var(--font-mono); text-transform:uppercase;">
+              Cockpit-Szenario (${ctx.aircraft.shortCode} @ ${ctx.airfield.name})
+            </div>
+            <div style="font-size:0.88rem; margin:0.3rem 0;">${scenarioInterpolated}</div>
+            <div style="font-family:var(--font-mono); font-size:0.85rem; color:var(--hud-cyan);">
+              Muster-Funkspruch: "${exampleInterpolated}"
+            </div>
+          </div>
+
+          <div style="margin-top:1rem;">
+            <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:0.4rem;">
+              ✍️ Interaktive Übung: ${promptInterpolated}
+            </label>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+              <input type="text" id="lesson-exercise-input" placeholder="${exampleInterpolated}" onkeydown="if(event.key==='Enter') AppUI.submitLessonExercise()" style="flex:1; min-width:240px; font-family:var(--font-mono);" />
+              <button class="btn btn-primary" onclick="AppUI.submitLessonExercise()">🎙️ Prüfen & Senden</button>
+              <button class="btn" onclick="document.getElementById('lesson-exercise-input').value = '${exampleInterpolated.replace(/'/g, "\\'")}'">Beispiel einfügen</button>
+            </div>
+            <div id="lesson-feedback-box"></div>
+          </div>
+        `;
+      },
+
+      async selectLesson(lessonId) {
+        this.state.currentLessonId = lessonId;
+        await StorageManager.saveState(this.state);
+        this.renderLessons();
+      },
+
+      async submitLessonExercise() {
+        const inputEl = document.getElementById("lesson-exercise-input");
+        const fbBox = document.getElementById("lesson-feedback-box");
+        if (!inputEl || !fbBox) return;
+
+        AudioEngine.playClick();
+        const ctx = this.getContext();
+        const lesson =
+          DomainData.lessons.find(l => l.id === this.state.currentLessonId) ||
+          DomainData.lessons[0];
+
+        const modelSol = DomainData.interpolate(lesson.exampleCall, ctx);
+        const result = RadioEvaluator.evaluate(inputEl.value, lesson.evalRules, ctx, modelSol);
+
+        if (result.passed) {
+          if (!this.state.completedLessons.includes(lesson.id)) {
+            this.state.completedLessons.push(lesson.id);
+          }
+          const replyText = DomainData.interpolate(lesson.stationReply, ctx);
+          result.stationReaction = replyText;
+          AudioEngine.speakStation(replyText);
+        } else {
+          AudioEngine.speakStation(result.stationReaction);
+        }
+
+        await this.recordAttempt(`Lektion ${lesson.id}`, inputEl.value, result);
+        this.renderDashboard();
+
+        const nextLessonId = lesson.id < DomainData.lessons.length ? lesson.id + 1 : null;
+        fbBox.innerHTML = this.buildFeedbackHTML(result, nextLessonId);
+      },
+
+      buildFeedbackHTML(result, nextLessonId = null) {
+        const badgeClass =
+          result.overallSeverity === "critical" ? "tag-critical" :
+          result.overallSeverity === "major" ? "tag-dcs" : "tag-example";
+
+        return `
+          <div class="feedback-panel">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+              <strong style="color:${result.passed ? "var(--hud-green)" : "var(--hud-red)"};">
+                ${result.passed ? "✅ Funkspruch bestanden!" : "❌ Korrektur erforderlich"} (Score: ${result.score}/100)
+              </strong>
+              <span class="tag ${badgeClass}">Schweregrad: ${result.overallSeverity.toUpperCase()}</span>
+            </div>
+
+            <div class="msg-row msg-station" style="margin-top:0.65rem; font-family:var(--font-mono);">
+              <div class="msg-meta"><span>ANTWORT DER FUNKSTELLE</span><span>RX</span></div>
+              "${result.stationReaction}"
+            </div>
+
+            <ul class="check-list">
+              ${result.checks.map(c => `
+                <li class="check-item ${c.status}">
+                  <span>${c.status === "ok" ? "✔" : c.status === "minor" ? "⚠" : "✖"}</span>
+                  <span>${c.text}</span>
+                </li>
+              `).join("")}
+            </ul>
+
+            <div style="font-size:0.82rem; color:var(--text-muted); font-family:var(--font-mono); margin-top:0.5rem;">
+              <strong>Musterlösung:</strong> "${result.modelSolution}"
+            </div>
+
+            ${result.passed && nextLessonId ? `
+              <div style="margin-top:0.75rem;">
+                <button class="btn btn-primary" onclick="AppUI.selectLesson(${nextLessonId})">
+                  Nächste Lektion (Stufe ${nextLessonId}) starten →
+                </button>
+              </div>
+            ` : ""}
+          </div>
+        `;
+      },
+
+      populateScenarioDropdown() {
+        const sel = document.getElementById("trainer-scenario-select");
+        if (!sel) return;
+        sel.innerHTML = DomainData.scenarios.map(s =>
+          `<option value="${s.id}" ${s.id === this.currentScenarioId ? "selected" : ""}>${s.title}</option>`
+        ).join("");
+      },
+
+      selectScenario(scenarioId) {
+        this.currentScenarioId = scenarioId;
+        this.initTrainerScenario(scenarioId);
+      },
+
+      restartCurrentScenario() {
+        this.initTrainerScenario(this.currentScenarioId);
+      },
+
+      async changeDifficulty(diff) {
+        this.state.difficulty = diff;
+        await StorageManager.saveState(this.state);
+        this.renderTrainerStepUI();
+      },
+
+      initTrainerScenario(scenarioId) {
+        const scenario =
+          DomainData.scenarios.find(s => s.id === scenarioId) ||
+          DomainData.scenarios[0];
+        this.currentScenarioId = scenario.id;
+        this.currentScenarioStep = 0;
+        this.trainerLog = [];
+
+        const ctx = this.getContext();
+        const firstStep = scenario.steps[0];
+        this.trainerLog.push({
+          type: "system",
+          sender: "MISSIONS-LEITUNG",
+          text: DomainData.interpolate(firstStep.systemPrompt, ctx)
+        });
+
+        const fbContainer = document.getElementById("trainer-feedback-container");
+        if (fbContainer) fbContainer.innerHTML = "";
+        const modelBox = document.getElementById("trainer-model-box");
+        if (modelBox) modelBox.style.display = "none";
+
+        this.renderTrainerMeta();
+        this.renderTrainerStepUI();
+      },
+
+      renderTrainerMeta() {
+        const ctx = this.getContext();
+        const scenario =
+          DomainData.scenarios.find(s => s.id === this.currentScenarioId) ||
+          DomainData.scenarios[0];
+
+        const briefEl = document.getElementById("trainer-scenario-briefing");
+        if (briefEl) {
+          briefEl.textContent = DomainData.interpolate(scenario.briefing, ctx);
+        }
+
+        const telEl = document.getElementById("trainer-telemetry-box");
+        if (telEl) {
+          telEl.innerHTML = `
+            <div><strong>CALLSIGN:</strong> <span style="color:var(--hud-green)">${ctx.callsign}</span> (${ctx.aircraft.shortCode})</div>
+            <div><strong>FLUGPLATZ:</strong> ${ctx.airfield.name}</div>
+            <div><strong>ACTIVE RWY:</strong> ${ctx.airfield.activeRunway} (Wind ${ctx.airfield.sampleWeather.wind})</div>
+            <div><strong>QNH / ATIS:</strong> ${ctx.airfield.sampleWeather.qnhInHg} inHg // Info ${ctx.airfield.sampleWeather.infoLetter}</div>
+            <div><strong>FREQUENZ:</strong> ${ctx.station.id === "atc" ? ctx.airfield.freqUHF : ctx.station.freqUHF}</div>
+          `;
+        }
+      },
+
+      renderTrainerStepUI() {
+        const ctx = this.getContext();
+        const scenario =
+          DomainData.scenarios.find(s => s.id === this.currentScenarioId) ||
+          DomainData.scenarios[0];
+        const stepObj = scenario.steps[this.currentScenarioStep] || scenario.steps[0];
+
+        const stepInd = document.getElementById("trainer-step-indicator");
+        if (stepInd) {
+          stepInd.textContent = `Schritt ${this.currentScenarioStep + 1} / ${scenario.steps.length}`;
+        }
+
+        const term = document.getElementById("trainer-terminal");
+        if (term) {
+          term.innerHTML = this.trainerLog.map(m => {
+            const cls = m.type === "pilot" ? "msg-pilot" : m.type === "station" ? "msg-station" : "msg-system";
+            return `
+              <div class="msg-row ${cls}">
+                <div class="msg-meta"><span>${m.sender}</span><span>${m.time || ""}</span></div>
+                <div>${m.text}</div>
+              </div>
+            `;
+          }).join("");
+          term.scrollTop = term.scrollHeight;
+        }
+
+        const assistBox = document.getElementById("trainer-assist-box");
+        if (assistBox) {
+          const diff = this.state.difficulty || "beginner";
+          if (diff === "beginner" && stepObj.hint4W) {
+            const chips = stepObj.hint4W.map(h => DomainData.interpolate(h, ctx));
+            assistBox.innerHTML = `
+              <div style="font-size:0.76rem; color:var(--text-muted);">
+                Klickbare 4-W-Bausteine (Anfänger-Hilfe – klicken zum Einfügen):
+              </div>
+              <div class="token-bar">
+                ${chips.map(c => `<span class="token-chip" onclick="AppUI.appendTokenToTrainer('${c.replace(/'/g, "\\'")}')">+ ${c}</span>`).join("")}
+              </div>
+            `;
+          } else if (diff === "advanced") {
+            assistBox.innerHTML = `<div style="font-size:0.78rem; color:var(--hud-amber);">Fortgeschrittenen-Modus: Halte dich an die 4-W-Regel (Wen → Wer → Wo → Was).</div>`;
+          } else {
+            assistBox.innerHTML = "";
+          }
+        }
+      },
+
+      appendTokenToTrainer(tokenText) {
+        const inp = document.getElementById("trainer-user-input");
+        if (!inp) return;
+        const cur = inp.value.trim();
+        inp.value = cur ? `${cur}, ${tokenText}` : tokenText;
+        inp.focus();
+      },
+
+      toggleTrainerModelSolution() {
+        const box = document.getElementById("trainer-model-box");
+        if (!box) return;
+        const ctx = this.getContext();
+        const scenario =
+          DomainData.scenarios.find(s => s.id === this.currentScenarioId) ||
+          DomainData.scenarios[0];
+        const stepObj = scenario.steps[this.currentScenarioStep] || scenario.steps[0];
+        box.textContent = `Musterlösung: "${DomainData.interpolate(stepObj.modelSolution, ctx)}"`;
+        box.style.display = box.style.display === "none" ? "block" : "none";
+      },
+
+      async submitTrainerTransmission() {
+        const inp = document.getElementById("trainer-user-input");
+        const fbContainer = document.getElementById("trainer-feedback-container");
+        if (!inp || !fbContainer) return;
+
+        AudioEngine.playClick();
+        const rawText = inp.value;
+        const ctx = this.getContext();
+        const scenario =
+          DomainData.scenarios.find(s => s.id === this.currentScenarioId) ||
+          DomainData.scenarios[0];
+        const stepObj = scenario.steps[this.currentScenarioStep];
+        if (!stepObj) return;
+
+        const nowStr = new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        this.trainerLog.push({
+          type: "pilot",
+          sender: `${ctx.callsign} (${ctx.aircraft.shortCode})`,
+          time: nowStr,
+          text: rawText || "(Leerer Träger)"
+        });
+
+        const modelSol = DomainData.interpolate(stepObj.modelSolution, ctx);
+        const evalRes = RadioEvaluator.evaluate(rawText, stepObj.evalRules, ctx, modelSol);
+
+        if (evalRes.passed) {
+          const stationReply = DomainData.interpolate(stepObj.stationSuccessReply, ctx);
+          evalRes.stationReaction = stationReply;
+          this.trainerLog.push({
+            type: "station",
+            sender: "FUNKSTELLE",
+            time: nowStr,
+            text: stationReply
+          });
+          AudioEngine.speakStation(stationReply);
+          inp.value = "";
+
+          if (this.currentScenarioStep < scenario.steps.length - 1) {
+            this.currentScenarioStep++;
+            const nextStep = scenario.steps[this.currentScenarioStep];
+            this.trainerLog.push({
+              type: "system",
+              sender: `NÄCHSTER SCHRITT (${nextStep.stepTitle})`,
+              time: nowStr,
+              text: DomainData.interpolate(nextStep.systemPrompt, ctx)
+            });
+          } else {
+            this.trainerLog.push({
+              type: "system",
+              sender: "SZENARIO ABGESCHLOSSEN",
+              time: nowStr,
+              text: "✅ Alle Schritte dieses Funk-Szenarios erfolgreich absolviert!"
+            });
+          }
+        } else {
+          this.trainerLog.push({
+            type: "station",
+            sender: "FUNKSTELLE (KORREKTUR-ANFORDERUNG)",
+            time: nowStr,
+            text: evalRes.stationReaction
+          });
+          AudioEngine.speakStation(evalRes.stationReaction);
+        }
+
+        await this.recordAttempt(`Simulator: ${scenario.id}`, rawText, evalRes);
+        this.renderTrainerStepUI();
+        fbContainer.innerHTML = this.buildFeedbackHTML(evalRes, null);
+      },
+
+      renderAnalytics() {
+        const errList = document.getElementById("analytics-error-list");
+        if (errList) {
+          const entries = Object.entries(DomainData.errorCategories);
+          errList.innerHTML = entries.map(([key, meta]) => {
+            const count = this.state.errorCounts[key] || 0;
+            return `
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:0.45rem 0; border-bottom:1px solid var(--border-dim); font-size:0.84rem;">
+                <div>
+                  <span class="tag ${meta.severity === "critical" ? "tag-critical" : meta.severity === "major" ? "tag-dcs" : "tag-standard"}" style="margin-right:0.4rem;">
+                    ${meta.severity}
+                  </span>
+                  <span>${meta.title}</span>
+                </div>
+                <strong style="font-family:var(--font-mono); color:${count > 0 ? "var(--hud-amber)" : "var(--text-muted)"};">
+                  ${count}x
+                </strong>
+              </div>
+            `;
+          }).join("");
+        }
+
+        const countTag = document.getElementById("history-count-tag");
+        if (countTag) countTag.textContent = `${this.state.history.length} Einträge`;
+
+        const tbody = document.getElementById("analytics-history-tbody");
+        if (tbody) {
+          if (!this.state.history.length) {
+            tbody.innerHTML = `<tr><td colspan="6" style="color:var(--text-muted); text-align:center;">Noch keine Funksprüche absolviert.</td></tr>`;
+          } else {
+            tbody.innerHTML = this.state.history.map(h => `
+              <tr>
+                <td style="font-family:var(--font-mono); font-size:0.78rem;">${h.timestamp}</td>
+                <td>${h.mode}</td>
+                <td>${h.aircraftAndStation}</td>
+                <td style="font-family:var(--font-mono); color:var(--hud-cyan);">"${h.input}"</td>
+                <td style="font-family:var(--font-mono); font-weight:700;">${h.score}%</td>
+                <td><span class="tag ${h.severity === "critical" ? "tag-critical" : h.severity === "ok" ? "tag-example" : "tag-dcs"}">${h.severity}</span></td>
+              </tr>
+            `).join("");
+          }
+        }
+      },
+
+      async toggleAudioSetting(enabled) {
+        this.state.audioEnabled = !!enabled;
+        await StorageManager.saveState(this.state);
+        if (enabled) AudioEngine.playClick();
+      },
+
+      exportProgressJSON() {
+        const dataStr = JSON.stringify(this.state, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `dcs-radio-trainer-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+
+      importProgressJSON(event) {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          try {
+            const imported = JSON.parse(e.target.result);
+            this.state = Object.assign(StorageManager.getDefaultState(), imported);
+            await StorageManager.saveState(this.state);
+            this.renderAll();
+            alert("Lernstand erfolgreich importiert!");
+          } catch (err) {
+            alert("Fehler beim Importieren der JSON-Datei.");
+          }
+        };
+        reader.readAsText(file);
+      },
+
+      async resetAllProgress() {
+        if (!confirm("Möchtest du deinen gesamten Lernstand und die Historie wirklich zurücksetzen?")) return;
+        this.state = StorageManager.getDefaultState();
+        await StorageManager.saveState(this.state);
+        this.renderAll();
+        this.initTrainerScenario(this.currentScenarioId);
+      }
+    };
+
+    /**
+     * ============================================================================
+     * LAYER 6: AUTOMATED QA SELF-TEST SUITE (10 SYSTEM TESTS)
+     * ============================================================================
+     */
+    const SelfTestSuite = {
+      async runAllTests() {
+        const out = document.getElementById("qa-test-results");
+        if (!out) return;
+
+        const backupState = JSON.parse(JSON.stringify(AppUI.state));
+        const logs = [];
+        let passedCount = 0;
+
+        const assertTest = (num, name, condition, detail) => {
+          if (condition) {
+            passedCount++;
+            logs.push(`✅ [TEST ${num}/10 PASS] ${name} — ${detail}`);
+          } else {
+            logs.push(`❌ [TEST ${num}/10 FAIL] ${name} — ${detail}`);
+          }
+        };
+
+        // Test 1: Aircraft selection updates callsign & radios
+        await AppUI.selectAircraft("a10c2");
+        const ctx1 = AppUI.getContext();
+        assertTest(1, "Flugzeugwechsel (A-10C II)", ctx1.aircraft.id === "a10c2" && ctx1.callsign === "Hawg 1-1", `Callsign=${ctx1.callsign}, Radio1=${ctx1.aircraft.radios[0].model}`);
+
+        // Test 2: Airfield selection updates ATC frequencies & runway
+        await AppUI.selectAirfield("batumi");
+        const ctx2 = AppUI.getContext();
+        assertTest(2, "Flugplatzwechsel (Batumi UGSB)", ctx2.airfield.activeRunway === "13" && ctx2.airfield.freqUHF.includes("260"), `RWY=${ctx2.airfield.activeRunway}, UHF=${ctx2.airfield.freqUHF}`);
+
+        // Test 3: Station selection switches context
+        await AppUI.selectStation("awacs");
+        const ctx3 = AppUI.getContext();
+        assertTest(3, "Funkstellenwechsel (AWACS Overlord)", ctx3.station.id === "awacs" && ctx3.station.stationCallsign === "Overlord 1-1", `Station=${ctx3.station.stationCallsign}`);
+
+        // Reset to F-16C & Kobuleti for standard phraseology tests
+        await AppUI.selectAircraft("f16c");
+        await AppUI.selectStation("atc");
+        await AppUI.selectAirfield("kobuleti");
+        const stdCtx = AppUI.getContext();
+
+        // Test 4: Correct transmission evaluation (Lesson 1 Radio Check)
+        const l1 = DomainData.lessons[0];
+        const res4 = RadioEvaluator.evaluate("Kobuleti Tower, Viper 1-1, radio check", l1.evalRules, stdCtx, "");
+        assertTest(4, "Korrekter Funkspruch (100% Score)", res4.passed && res4.score === 100, `Score=${res4.score}, Severity=${res4.overallSeverity}`);
+
+        // Test 5: Empty / nonsensical input rejection
+        const res5 = RadioEvaluator.evaluate("   ???  ", l1.evalRules, stdCtx, "");
+        assertTest(5, "Leere/Ungültige Eingabe abfangen", !res5.passed && res5.triggeredErrors.includes("empty_or_invalid"), `Score=${res5.score}`);
+
+        // Test 6: Reversed callsign order detection (Critical)
+        const res6 = RadioEvaluator.evaluate("Viper 1-1, Kobuleti Tower, radio check", l1.evalRules, stdCtx, "");
+        assertTest(6, "Vertauschte Rufzeichen-Reihenfolge (Wer vor Wen)", !res6.passed && res6.triggeredErrors.includes("callsign_order"), `Severity=${res6.overallSeverity}`);
+
+        // Test 7: Missing mandatory Hold Short readback (Lesson 4 Critical)
+        const l4 = DomainData.lessons[3];
+        const res7 = RadioEvaluator.evaluate("Kobuleti Ground, Viper 1-1, taxi to runway 07", l4.evalRules, stdCtx, "");
+        assertTest(7, "Fehlendes Hold-Short-Readback erkannt", !res7.passed && res7.triggeredErrors.includes("readback_holdshort"), `Triggered=${res7.triggeredErrors.join(",")}`);
+
+        // Test 8: Forbidden word 'Takeoff' at holding point (Lesson 5 Critical)
+        const l5 = DomainData.lessons[4];
+        const res8 = RadioEvaluator.evaluate("Kobuleti Tower, Viper 1-1, holding short runway 07, ready for takeoff", l5.evalRules, stdCtx, "");
+        assertTest(8, "Verbotenes Wort 'Takeoff' vor Freigabe erkannt", !res8.passed && res8.triggeredErrors.includes("premature_takeoff"), `Severity=${res8.overallSeverity}`);
+
+        // Test 9: Missing Gear Down / Three Green on Final (Lesson 10 Critical)
+        const l10 = DomainData.lessons[9];
+        const res9 = RadioEvaluator.evaluate("Kobuleti Tower, Viper 1-1, final runway 07", l10.evalRules, stdCtx, "");
+        assertTest(9, "Fehlende Fahrwerksmeldung im Endanflug erkannt", !res9.passed && res9.triggeredErrors.includes("safety_gear"), `Severity=${res9.overallSeverity}`);
+
+        // Test 10: IndexedDB / LocalStorage roundtrip persistence
+        AppUI.state.xp = 777;
+        await StorageManager.saveState(AppUI.state);
+        const reloaded = await StorageManager.loadState();
+        assertTest(10, "Persistenz-Roundtrip (IndexedDB/LocalStorage)", reloaded.xp === 777, `Reloaded XP=${reloaded.xp}`);
+
+        // Restore user state
+        AppUI.state = backupState;
+        await StorageManager.saveState(AppUI.state);
+        AppUI.renderAll();
+
+        out.innerHTML = `
+          <div style="color:${passedCount === 10 ? "var(--hud-green)" : "var(--hud-red)"}; font-weight:700; margin-bottom:0.5rem;">
+            QA-ERGEBNIS: ${passedCount} / 10 SYSTEMTESTS BESTANDEN
+          </div>
+          ${logs.map(l => `<div>${l}</div>`).join("")}
+        `; 
+      }
+    };
+
+    window.addEventListener("DOMContentLoaded", () => {
+      AppUI.init();
+    });
+  </script>
+</body>
+</html>
